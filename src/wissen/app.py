@@ -57,6 +57,15 @@ MEDIA_TYPES = {
 WAKE_SECONDS = 60
 
 
+def file_headers(ext: str, **more: str) -> dict[str, str]:
+    """Headers for a file from the archive shown in the browser: never guessed to be something
+    else, and a picture (SVG) never runs a script in our origin."""
+    headers = {"X-Content-Type-Options": "nosniff", **more}
+    if ext == "svg":
+        headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'"
+    return headers
+
+
 class AreaIn(BaseModel):
     name: str = Field(max_length=40)
     label: str = Field(default="", max_length=40)
@@ -363,41 +372,43 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
                         "notify_lockout", "lock.title", "lock.body", priority=4, tags="warning",
                         user=name, count=failures, ip=ip, minutes=max(1, seconds // 60),
                         where=app.state.notify.text("where.ext" if external else "where.int"))
-                time.sleep(1)
             raise HTTPException(status_code=status, detail=detail)
 
-        wait = guard.locked_for(name, external)
+        wait = guard.begin(name, external)
         if wait:
             raise HTTPException(status_code=429, detail="locked", headers={"Retry-After": str(wait)})
-        account = app.state.users.authenticate(name, body.password)
-        if not account:
-            refuse(401, "invalid credentials")
-        policy = app.state.security.load()
-        if external and policy.require_2fa_external and not account.has_totp:
-            refuse(403, "second factor required outside", count=False)
-        mfa = False
-        if account.has_totp and (external or policy.require_2fa_internal or body.code):
-            if not body.code:
-                raise HTTPException(status_code=401, detail="code required")
-            kind = app.state.users.second_factor(name, body.code)
-            if not kind:
-                refuse(401, "invalid code")
-            mfa = True
-            if kind == "recovery":
-                left = app.state.users.get(name).public()["recovery_left"]
-                app.state.notify.send("notify_2fa_changes", "recovery.title", "recovery.body",
-                                      priority=4, tags="key", user=name, left=left, ip=ip)
-        guard.success(name, external)
-        agent = request.headers.get("user-agent", "")
-        token = app.state.sessions.create(name, ip=ip, agent=agent, external=external, mfa=mfa)
-        response.set_cookie(
-            cookie_name(request), token, max_age=SessionStore.max_age(external),
-            httponly=True, samesite="lax", secure=is_https(request), path="/",
-        )
-        if external:
-            app.state.notify.send("notify_external_login", "external.title", "external.body",
-                                  user=name, ip=ip, agent=describe_agent(agent))
-        return account.public()
+        try:
+            account = app.state.users.authenticate(name, body.password)
+            if not account:
+                refuse(401, "invalid credentials")
+            policy = app.state.security.load()
+            if external and policy.require_2fa_external and not account.has_totp:
+                refuse(403, "second factor required outside", count=False)
+            mfa = False
+            if account.has_totp and (external or policy.require_2fa_internal or body.code):
+                if not body.code:
+                    raise HTTPException(status_code=401, detail="code required")
+                kind = app.state.users.second_factor(name, body.code)
+                if not kind:
+                    refuse(401, "invalid code")
+                mfa = True
+                if kind == "recovery":
+                    left = app.state.users.get(name).public()["recovery_left"]
+                    app.state.notify.send("notify_2fa_changes", "recovery.title", "recovery.body",
+                                          priority=4, tags="key", user=name, left=left, ip=ip)
+            guard.success(name, external)
+            agent = request.headers.get("user-agent", "")
+            token = app.state.sessions.create(name, ip=ip, agent=agent, external=external, mfa=mfa)
+            response.set_cookie(
+                cookie_name(request), token, max_age=SessionStore.max_age(external),
+                httponly=True, samesite="lax", secure=is_https(request), path="/",
+            )
+            if external:
+                app.state.notify.send("notify_external_login", "external.title", "external.body",
+                                      user=name, ip=ip, agent=describe_agent(agent))
+            return account.public()
+        finally:
+            guard.end(name, external)
 
     @app.get("/api/setup", tags=["auth"])
     def setup_state(request: Request):
@@ -879,6 +890,7 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
             media_type=MEDIA_TYPES.get(doc["ext"], "application/octet-stream"),
             filename=doc["name"],
             content_disposition_type="attachment" if download else "inline",
+            headers=file_headers(doc["ext"]),
         )
 
     @app.get("/api/documents/{doc_id}/asset/{rel:path}", tags=["archive"])
@@ -894,12 +906,17 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         path = on_disk(root, doc["path"].rsplit("/", 1)[0] + "/" + rel if "/" in doc["path"] else rel).resolve()
         if area_root not in path.parents or not path.is_file():
             raise HTTPException(status_code=404, detail="file not found")
+        inside = path.relative_to(area_root).parts
+        if any(part.startswith(".") for part in inside):          # hidden folders, the trash
+            raise HTTPException(status_code=404, detail="file not found")
+        # a page in the archive's root belongs to no area: it reaches its own files next to it and
+        # its <Seite>.assets folder, never into the areas below
+        if not doc["area"] and len(inside) > 1 and not inside[0].endswith(".assets"):
+            raise HTTPException(status_code=404, detail="file not found")
         ext = path.suffix.lstrip(".").lower()
-        headers = {"Cache-Control": "max-age=3600"}
-        if ext == "svg":   # a picture must not run scripts in our origin
-            headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'"
         return FileResponse(path, media_type=MEDIA_TYPES.get(ext, "application/octet-stream"),
-                            filename=path.name, content_disposition_type="inline", headers=headers)
+                            filename=path.name, content_disposition_type="inline",
+                            headers=file_headers(ext, **{"Cache-Control": "max-age=3600"}))
 
     # ---------------------------------------------------------- writing
 
@@ -1129,7 +1146,7 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
             raise _op(exc) from exc
         ext = full.suffix.lstrip(".").lower()
         return FileResponse(full, media_type=MEDIA_TYPES.get(ext, "application/octet-stream"),
-                            filename=full.name, content_disposition_type="inline")
+                            filename=full.name, content_disposition_type="inline", headers=file_headers(ext))
 
     @app.post("/api/trash/restore", tags=["write"])
     def trash_restore(body: TrashRestoreIn, user: User = Depends(current_user)):

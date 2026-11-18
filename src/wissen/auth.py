@@ -9,6 +9,7 @@ from fastapi import HTTPException, Request
 
 COOKIE = "wissen_session"              # plain http (local testing, own LAN without TLS)
 COOKIE_SECURE = "__Host-wissen_session"  # https: Secure, whole host only, no Domain
+READING_METHODS = ("GET", "HEAD", "OPTIONS")
 
 
 @dataclass(frozen=True)
@@ -58,7 +59,11 @@ def current_user(request: Request) -> User:
             raise HTTPException(status_code=401, detail="not authenticated")
         if key.right == "write":
             return User(name="api", display_name=key.name, is_admin=True)
-        # a reading key sees every area, but may change nothing
+        # a reading key changes nothing, whatever the route would allow; the MCP endpoint is
+        # a POST for every call and keeps reading keys away from its writing tools itself
+        if request.method not in READING_METHODS and request.url.path != "/api/mcp":
+            raise HTTPException(status_code=403, detail="this API key may only read")
+        # it sees every area, like an administrator, but is none: admin-only routes stay shut
         areas = {a["name"]: "read" for a in request.app.state.index.areas()}
         return User(name="api", display_name=key.name, is_admin=False, areas=areas)
     session = request.app.state.sessions.get(session_token(request), client_ip(request))

@@ -276,6 +276,8 @@ def mount_mcp(app: FastAPI, ops: SimpleNamespace) -> None:
         spec = tools.get(name)
         if not spec:
             raise ValueError(f"unknown tool: {name}")
+        if spec["write"] and not can_write_anything(user):      # not offered, and not done either
+            return {"content": [_text("no write access with this key")], "isError": True}
         allowed = spec["schema"]["properties"]
         try:
             unknown = sorted(set(arguments) - set(allowed))

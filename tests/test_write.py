@@ -372,3 +372,45 @@ def test_text_size_and_reading_width_follow_the_account(client: TestClient):
     far = client.put("/api/me/prefs", json={"zoom": 900, "width": 5}).json()
     assert (far["zoom"], far["width"]) == (250, 40)                       # kept within what the sliders offer
     assert (client.get("/api/me").json()["zoom"], client.get("/api/me").json()["width"]) == (250, 40)
+
+
+def test_files_shown_inline_cannot_run_scripts(client: TestClient, settings: Settings):
+    """An SVG is a picture that may carry a script: wherever one is shown, it must not run in our origin."""
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+    (settings.archive / "oliver/Geräte/Waschmaschine- entkalken.assets/bild.svg").write_bytes(svg)
+    shown = client.get("/api/documents/abc123def0/asset/Waschmaschine-%20entkalken.assets/bild.svg", headers=API)
+    assert "default-src 'none'" in shown.headers["content-security-policy"]
+    assert shown.headers["x-content-type-options"] == "nosniff"
+    trashed = settings.archive / ".papierkorb/2026-11-18/oliver/Geräte/bild.svg"
+    trashed.parent.mkdir(parents=True)
+    trashed.write_bytes(svg)
+    res = client.get("/api/trash/file", headers=API, params={"path": ".papierkorb/2026-11-18/oliver/Geräte/bild.svg"})
+    assert res.status_code == 200 and "default-src 'none'" in res.headers["content-security-policy"]
+    assert res.headers["x-content-type-options"] == "nosniff"
+
+
+def test_a_page_outside_every_area_reaches_into_none(client: TestClient, settings: Settings):
+    """A page lying in the archive's root sees its own assets – not the files of the areas."""
+    page = settings.archive / "Lose Notiz.md"
+    page.write_text("---\nid: 0dd0dd0dd0\n---\n# Lose Notiz\n\n![](Lose%20Notiz.assets/a.png)\n", encoding="utf-8")
+    (settings.archive / "Lose Notiz.assets").mkdir()
+    (settings.archive / "Lose Notiz.assets/a.png").write_bytes(b"\x89PNG-lose")
+    client.app.state.index.scan()
+    login(client)
+    assert client.post("/api/users", json={"name": "erika", "password": "geheim1234567", "areas": {"": "read"}}).status_code == 201
+    erika = TestClient(client.app)
+    login(erika, "erika", "geheim1234567")
+    assert erika.get("/api/documents/0dd0dd0dd0/asset/Lose%20Notiz.assets/a.png").content == b"\x89PNG-lose"
+    for rel in ("oliver/Geräte/Waschmaschine-%20entkalken.assets/foto%201.png",
+                "oliver/Banken/DKB/2026-03-01_Kontoauszug.pdf", "oliver/.hidden/secret.pdf"):
+        assert erika.get(f"/api/documents/0dd0dd0dd0/asset/{rel}").status_code == 404, rel
+
+
+def test_a_reading_key_changes_nothing(client: TestClient):
+    login(client)
+    key = client.post("/api/security/api-keys", json={"name": "Leser", "right": "read"}).json()["token"]
+    reader = TestClient(client.app)
+    auth = {"Authorization": f"Bearer {key}"}
+    assert reader.get("/api/documents/abc123def0", headers=auth).status_code == 200
+    for method, path in (("PUT", "/api/documents/abc123def0/pin"), ("PUT", "/api/me/pins"), ("POST", "/api/ask")):
+        assert reader.request(method, path, headers=auth, json={}).status_code == 403, path
