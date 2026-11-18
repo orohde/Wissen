@@ -144,6 +144,11 @@ const I18N = {
     "ed.discard": "Die ungespeicherten Änderungen verwerfen?",
     "page.chartError": "Das Diagramm lässt sich nicht zeichnen – hier sein Text.",
     "page.chartZoom": "Antippen: volle Größe oder wieder an die Breite angepasst",
+    "page.mapError": "Die Karte lässt sich nicht zeichnen – hier ihr Text.",
+    "page.toc": "Inhalt",
+    "page.anchor": "Link auf diesen Abschnitt kopieren",
+    "page.anchorCopied": "Link auf den Abschnitt kopiert",
+    "page.fnBack": "Zurück zum Text",
     "ed.lost": "Die Sperre ist an {by} gegangen. Sichere deinen Text, bevor du die Seite verlässt.",
     "ed.upload": "Lädt {name} hoch …",
     "ed.menu": "Mehr",
@@ -633,6 +638,11 @@ const I18N = {
     "ed.discard": "Discard the unsaved changes?",
     "page.chartError": "The diagram cannot be drawn – here is its text.",
     "page.chartZoom": "Tap: full size, or fitted to the width again",
+    "page.mapError": "The map cannot be drawn – here is its text.",
+    "page.toc": "Contents",
+    "page.anchor": "Copy a link to this section",
+    "page.anchorCopied": "Link to the section copied",
+    "page.fnBack": "Back to the text",
     "ed.lost": "The lock went to {by}. Keep a copy of your text before you leave the page.",
     "ed.upload": "Uploading {name} …",
     "ed.menu": "More",
@@ -1105,6 +1115,7 @@ function applyTheme(theme) {
   const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   $('theme-dark').disabled = !dark;
   $('theme-light').disabled = dark;
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';   // code colours (vendor/highlight/theme.css)
   $('btn-theme').textContent = { system: '◐', light: '☀', dark: '☾' }[theme];
   if (mermaidTheme && mermaidTheme !== (dark ? 'dark' : 'default')) redrawCharts();
 }
@@ -1579,7 +1590,7 @@ const ADMIN_PANES = new Set(['users', 'storage', 'ai', 'security', 'api', 'syste
 function route() {
   if (!State.me) return;
   const m = location.hash.match(/^#\/einstellungen(?:\/([a-z]+))?/);
-  const page = location.hash.match(/^#\/seite\/([0-9a-z]{6,64})/);
+  const page = location.hash.match(/^#\/seite\/([0-9a-z]{6,64})(?:\/(.+))?/);
   if (Edit.on) {
     if (page && page[1] === Edit.doc.id) return;          // still on the page being edited
     if (Edit.dirty() && !confirm(t('ed.discard'))) { location.hash = '#/seite/' + Edit.doc.id; return; }
@@ -1595,7 +1606,7 @@ function route() {
   const other = inSettings || !!page || start || trash;
   $('archive-toolbar').hidden = other;
   $('archive-layout').hidden = other;
-  if (page) { openPageView(page[1]); return; }
+  if (page) { openPageView(page[1], page[2] ? safeDecode(page[2]) : ''); return; }
   if (start) { loadStart(); return; }
   if (trash) { loadTrash(); return; }
   if (!inSettings) return;
@@ -3681,7 +3692,7 @@ async function renderPage(box, doc, text) {
       ev.preventDefault();
       try {
         const hit = await api('documents/by-path?path=' + encodeURIComponent(target));
-        if (hit.ext === 'md') location.hash = '#/seite/' + hit.id;
+        if (hit.ext === 'md') location.hash = '#/seite/' + hit.id + (frag ? '/' + encodeURIComponent(safeDecode(frag)) : '');
         else window.open(`api/documents/${hit.id}/file${frag ? '#' + frag : ''}`, '_blank', 'noopener');
       } catch {
         window.open(assetUrl(doc, href.split('#')[0]), '_blank', 'noopener');
@@ -3697,25 +3708,222 @@ async function renderPage(box, doc, text) {
     q.classList.add('callout', 'callout--' + CALLOUTS[m[1].toUpperCase()]);
   });
   box.querySelectorAll('input[type=checkbox]').forEach(c => { c.disabled = true; });
-  // ```mermaid … ``` as a diagram, as GitHub shows it
-  const charts = [...box.querySelectorAll('pre > code.language-mermaid')];
+  addAnchors(box, doc);
+  // code blocks: ```mermaid as a diagram, ```geojson as a map (as GitHub shows them), the rest in colour
+  const code = [...box.querySelectorAll('pre > code')];
+  const charts = code.filter(c => c.classList.contains('language-mermaid'));
+  const maps = code.filter(c => c.classList.contains('language-geojson'));
+  const plain = code.filter(c => /\blanguage-/.test(c.className) && !charts.includes(c) && !maps.includes(c));
   if (charts.length) drawCharts(charts);
+  if (maps.length) drawMaps(maps);
+  if (plain.length) colourCode(plain);
+}
+
+// ------------------------------------------------------------------ Markdown extras
+// footnotes ([^1] and "[^1]: text"), ==marked text==; both as GitHub/Obsidian write them.
+// The editor keeps them as plain text, so a page written elsewhere comes back unchanged.
+
+const Foot = { defs: new Map(), order: [] };
+
+marked.use({
+  hooks: {
+    preprocess(md) { Foot.defs = new Map(); Foot.order = []; return md; },
+    postprocess(html) { return html + footnoteList(); },
+  },
+  extensions: [
+    {
+      name: 'footnoteDef', level: 'block',
+      start(src) { const m = /^\[\^[^\]\s]+\]:/m.exec(src); return m ? m.index : undefined; },
+      tokenizer(src) {
+        const m = /^\[\^([^\]\s]+)\]:[ \t]*([^\n]*(?:\n(?: {2,}|\t)[^\n]*)*)(?:\n+|$)/.exec(src);
+        if (!m) return undefined;
+        if (!Foot.defs.has(m[1])) Foot.defs.set(m[1], this.lexer.inlineTokens(m[2].replace(/\n[ \t]+/g, ' ').trim()));
+        return { type: 'footnoteDef', raw: m[0] };
+      },
+      renderer() { return ''; },
+    },
+    {
+      name: 'footnoteRef', level: 'inline',
+      start(src) { const i = src.indexOf('[^'); return i < 0 ? undefined : i; },
+      tokenizer(src) {
+        const m = /^\[\^([^\]\s]+)\](?!:)/.exec(src);
+        return m ? { type: 'footnoteRef', raw: m[0], id: m[1] } : undefined;
+      },
+      renderer(tok) {
+        if (!Foot.defs.has(tok.id)) return esc(tok.raw);
+        let n = Foot.order.indexOf(tok.id);
+        if (n < 0) n = Foot.order.push(tok.id) - 1;
+        return `<sup class="fn-ref" data-anchor="fnref-${esc(tok.id)}"><a href="#fn-${esc(tok.id)}">${n + 1}</a></sup>`;
+      },
+    },
+    {
+      name: 'mark', level: 'inline',
+      start(src) { const i = src.indexOf('=='); return i < 0 ? undefined : i; },
+      tokenizer(src) {
+        const m = /^==(?=[^\s=])([\s\S]*?[^\s=])==(?!=)/.exec(src);
+        return m ? { type: 'mark', raw: m[0], tokens: this.lexer.inlineTokens(m[1]) } : undefined;
+      },
+      renderer(tok) { return `<mark>${this.parser.parseInline(tok.tokens)}</mark>`; },
+    },
+  ],
+});
+
+function footnoteList() {
+  const ids = [...Foot.order, ...[...Foot.defs.keys()].filter(id => !Foot.order.includes(id))];
+  if (!ids.length) return '';
+  const items = ids.map(id => {
+    const back = Foot.order.includes(id)
+      ? ` <a href="#fnref-${esc(id)}" class="fn-back" title="${esc(t('page.fnBack'))}" aria-label="${esc(t('page.fnBack'))}">↩</a>` : '';
+    return `<li data-anchor="fn-${esc(id)}">${marked.Parser.parseInline(Foot.defs.get(id))}${back}</li>`;
+  });
+  return `<section class="footnotes"><ol>${items.join('')}</ol></section>`;
+}
+
+// Headings get an anchor like GitHub's ("## Nächste Schritte" → #nächste-schritte): a link
+// "#nächste-schritte" jumps there, "Seite.md#nächste-schritte" opens the page at it, and the
+// "#" next to a heading copies the address. Pages with three or more sections get contents.
+const slugify = text => text.trim().toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s/g, '-');
+
+function addAnchors(box, doc) {
+  const seen = new Map();
+  const heads = [...box.querySelectorAll('h1, h2, h3, h4, h5, h6')];
+  for (const h of heads) {
+    const base = slugify(h.textContent) || 'abschnitt';
+    const n = seen.get(base) ?? -1;
+    seen.set(base, n + 1);
+    h.dataset.anchor = n < 0 ? base : `${base}-${n + 1}`;
+    h.dataset.label = h.textContent;
+    const a = document.createElement('a');
+    a.className = 'h-anchor';
+    a.href = '#' + h.dataset.anchor;
+    a.textContent = '#';
+    a.title = t('page.anchor');
+    a.setAttribute('aria-label', t('page.anchor'));
+    h.appendChild(a);
+  }
+  const sections = heads.filter(h => h.tagName === 'H2' || h.tagName === 'H3');
+  if (sections.length >= 3) {
+    const toc = document.createElement('details');
+    toc.className = 'toc';
+    toc.open = store.get('toc', true);
+    toc.addEventListener('toggle', () => store.set('toc', toc.open));
+    toc.innerHTML = `<summary>${esc(t('page.toc'))}</summary><ol>` + sections.map(h =>
+      `<li class="toc--${h.tagName.toLowerCase()}"><a href="#${esc(h.dataset.anchor)}">${esc(h.dataset.label)}</a></li>`).join('') + '</ol>';
+    const first = box.firstElementChild;
+    if (first && first.tagName === 'H1') first.after(toc); else box.prepend(toc);
+  }
+  box._doc = doc;
+  if (!box._anchors) {
+    box._anchors = true;
+    box.addEventListener('click', onAnchorClick);
+  }
+}
+
+function onAnchorClick(ev) {
+  const a = ev.target.closest('a[href^="#"]');
+  const box = ev.currentTarget;
+  if (!a || !box.contains(a)) return;
+  const href = a.getAttribute('href');
+  if (href.startsWith('#/')) return;
+  ev.preventDefault();
+  const name = safeDecode(href.slice(1));
+  const doc = box._doc;
+  const here = doc && $('page-body') === box;
+  if (here) history.replaceState(null, '', `#/seite/${doc.id}/${encodeURIComponent(name)}`);
+  if (a.classList.contains('h-anchor') && doc) {
+    const url = `${location.origin}${location.pathname}#/seite/${doc.id}/${encodeURIComponent(name)}`;
+    navigator.clipboard?.writeText(url).then(() => toast(esc(t('page.anchorCopied')), null, 2500), () => {});
+  }
+  jumpTo(box, name);
+}
+
+function jumpTo(box, name) {
+  const target = box.querySelector(`[data-anchor="${CSS.escape(name)}"]`)
+    || box.querySelector(`[data-anchor="${CSS.escape(slugify(name))}"]`);
+  if (!target) return;
+  target.scrollIntoView({ block: 'start' });
+  target.classList.remove('flash');
+  void target.offsetWidth;
+  target.classList.add('flash');
+}
+
+// big libraries only when a page needs them
+const loaded = new Map();
+function loadScript(src) {
+  if (!loaded.has(src)) {
+    loaded.set(src, new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => { loaded.delete(src); reject(new Error(src)); };
+      document.head.appendChild(s);
+    }));
+  }
+  return loaded.get(src);
+}
+function loadStyle(href) {
+  if (document.querySelector(`link[href="${href}"]`)) return;
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  l.href = href;
+  document.head.appendChild(l);
+}
+
+async function colourCode(codes) {
+  try { await loadScript('vendor/highlight/highlight.min.js'); } catch { return; }
+  hljs.configure({ ignoreUnescapedHTML: true });
+  for (const c of codes) {
+    const lang = (/\blanguage-(\S+)/.exec(c.className) || [])[1];
+    if (lang && hljs.getLanguage(lang)) hljs.highlightElement(c);
+  }
+}
+
+// ```geojson … ``` as a map (Leaflet, OpenStreetMap tiles as in Augenblick!); names and
+// descriptions of the features show as text when a point or area is tapped
+async function drawMaps(codes) {
+  const boxes = codes.map(code => {
+    const fig = document.createElement('div');
+    fig.className = 'geomap';
+    fig.dataset.src = code.textContent;
+    code.parentElement.replaceWith(fig);
+    return fig;
+  });
+  loadStyle('vendor/leaflet/leaflet.css');
+  try { await loadScript('vendor/leaflet/leaflet.js'); } catch { boxes.forEach(f => blockFailed(f, 'page.mapError')); return; }
+  for (const fig of boxes) {
+    let data;
+    try { data = JSON.parse(fig.dataset.src); } catch { blockFailed(fig, 'page.mapError'); continue; }
+    try {
+      const map = L.map(fig, { scrollWheelZoom: false, worldCopyJump: true });
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(map);
+      const layer = L.geoJSON(data, {
+        onEachFeature(f, l) {
+          const p = f.properties || {};
+          const text = [p.name || p.title, p.description].filter(Boolean).map(esc);
+          if (text.length) l.bindPopup(text.join('<br>'));
+        },
+      }).addTo(map);
+      const bounds = layer.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 16 });
+      else map.setView([51.2, 10.4], 5);
+    } catch {
+      fig.className = 'geomap';
+      blockFailed(fig, 'page.mapError');
+    }
+  }
+}
+
+function blockFailed(fig, key) {
+  fig.classList.add('chart--failed');
+  fig.classList.remove('geomap');
+  fig.innerHTML = `<p class="chart__note">${esc(t(key))}</p><pre><code>${esc(fig.dataset.src)}</code></pre>`;
 }
 
 // Mermaid is big (2.7 MB), so it is loaded only when a page holds a diagram.
 // securityLevel 'strict': labels are text, no clicks, no scripts – Mermaid cleans its own SVG.
-let mermaidBundle = null;
 let chartSeq = 0;
-function loadMermaid() {
-  mermaidBundle ||= new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'vendor/mermaid/mermaid.min.js';
-    s.onload = resolve;
-    s.onerror = () => { mermaidBundle = null; reject(new Error('mermaid')); };
-    document.head.appendChild(s);
-  });
-  return mermaidBundle;
-}
 
 async function drawCharts(codes) {
   // swap each code block for an empty box first, keeping the text, so the page does not wait
@@ -3726,7 +3934,7 @@ async function drawCharts(codes) {
     code.parentElement.replaceWith(fig);
     return fig;
   });
-  try { await loadMermaid(); } catch { boxes.forEach(chartFailed); return; }
+  try { await loadScript('vendor/mermaid/mermaid.min.js'); } catch { boxes.forEach(chartFailed); return; }
   for (const fig of boxes) await drawChart(fig);
 }
 
@@ -3760,10 +3968,7 @@ async function drawChart(fig) {
   }
 }
 
-function chartFailed(fig) {
-  fig.classList.add('chart--failed');
-  fig.innerHTML = `<p class="chart__note">${esc(t('page.chartError'))}</p><pre><code>${esc(fig.dataset.src)}</code></pre>`;
-}
+const chartFailed = fig => blockFailed(fig, 'page.chartError');
 
 // after switching light/dark the diagrams on screen are drawn again in the new colours
 function redrawCharts() {
@@ -3787,7 +3992,7 @@ async function showPage(box, doc) {
 
 const Page = { doc: null, text: '', source: false };
 
-async function openPageView(id) {
+async function openPageView(id, anchor = '') {
   const body = $('page-body');
   body.innerHTML = '';
   try {
@@ -3805,7 +4010,8 @@ async function openPageView(id) {
     $('page-menu').onclick = () => docMenu($('page-menu'), doc);
     $('page-meta').textContent = [doc.date ? formatDate(doc.date) : '', ...(doc.page_tags || []).map(x => '#' + x)]
       .filter(Boolean).join(' · ');
-    paintPageView();
+    await paintPageView();
+    if (anchor) jumpTo($('page-body'), anchor);
     if (Edit.auto === doc.id) { Edit.auto = null; startEdit(); }
   } catch (e) {
     body.innerHTML = `<p class="preview__none">${esc(errText(e))}</p>`;
@@ -3817,7 +4023,7 @@ function paintPageView() {
   $('page-source').setAttribute('aria-pressed', Page.source);
   body.classList.toggle('page-body--source', Page.source);
   if (Page.source) body.innerHTML = `<pre class="md-source">${esc(Page.text)}</pre>`;
-  else renderPage(body, Page.doc, Page.text);
+  else return renderPage(body, Page.doc, Page.text);
 }
 
 function initPage() {

@@ -126,7 +126,7 @@ python -m venv .venv && .venv/bin/pip install -e '.[dev]'
 WISSEN_ARCHIVE=./wissen WISSEN_DATA=./data WISSEN_ADMIN_PASSWORD=test-password-1 .venv/bin/python -m wissen
 ```
 
-Python · FastAPI · SQLite FTS5 · pypdfium2 · Tesseract · PDF.js · marked · DOMPurify · Mermaid · SAP Fundamental Styles. The interface needs no build step. Only the formatted editor (Milkdown core, ProseMirror, remark) is bundled once; the finished bundle is part of the repository, its sources and build instructions are in [`editor/`](editor/).
+Python · FastAPI · SQLite FTS5 · pypdfium2 · Tesseract · PDF.js · marked · DOMPurify · Mermaid · highlight.js · Leaflet · SAP Fundamental Styles. The interface needs no build step. Only the formatted editor (Milkdown core, ProseMirror, remark) is bundled once; the finished bundle is part of the repository, its sources and build instructions are in [`editor/`](editor/).
 
 ## Licence
 
