@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Wissen!</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a2a5c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Wissen!">
+  <link rel="stylesheet" href="vendor/theme_horizon.css" id="theme-light">
+  <link rel="stylesheet" href="vendor/theme_horizon_dark.css" id="theme-dark" disabled>
+  <link rel="stylesheet" href="vendor/fundamental.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============================== Login ============================== -->
+  <section id="view-login" class="login" hidden>
+    <form id="login-form" class="login__card">
+      <img src="icon.svg" alt="" class="login__logo">
+      <h1 class="fd-title fd-title--h3">Wissen!</h1>
+      <label class="fd-form-label" for="login-user" data-i18n="login.user">Benutzer</label>
+      <input class="fd-input" id="login-user" autocomplete="username" required>
+      <label class="fd-form-label" for="login-pass" data-i18n="login.pass">Passwort</label>
+      <input class="fd-input" id="login-pass" type="password" autocomplete="current-password" required>
+      <div id="login-code-box" class="login__code" hidden>
+        <label class="fd-form-label" for="login-code" data-i18n="login.code">Code aus der App</label>
+        <input class="fd-input" id="login-code" autocomplete="one-time-code" inputmode="numeric" maxlength="20" autocapitalize="off" spellcheck="false">
+        <p class="field-hint" data-i18n="login.code.hint">Oder einer deiner Wiederherstellungscodes.</p>
+      </div>
+      <p id="login-error" class="login__error" hidden data-i18n="login.error">Anmeldung fehlgeschlagen.</p>
+      <button class="fd-button fd-button--emphasized" type="submit" data-i18n="login.submit">Anmelden</button>
+    </form>
+    <form id="setup-form" class="login__card" hidden>
+      <img src="icon.svg" alt="" class="login__logo">
+      <h1 class="fd-title fd-title--h3">Wissen!</h1>
+      <p class="field-hint" data-i18n="setup.intro">Willkommen! Noch gibt es kein Konto. Lege jetzt den ersten Administrator an – weitere Konten folgen später unter Einstellungen → Benutzer.</p>
+      <label class="fd-form-label" for="setup-user" data-i18n="login.user">Benutzer</label>
+      <input class="fd-input" id="setup-user" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+      <label class="fd-form-label" for="setup-name" data-i18n="setup.name">Anzeigename</label>
+      <input class="fd-input" id="setup-name" autocomplete="name">
+      <label class="fd-form-label" for="setup-pass" data-i18n="login.pass">Passwort</label>
+      <input class="fd-input" id="setup-pass" type="password" autocomplete="new-password" minlength="12" required>
+      <label class="fd-form-label" for="setup-pass2" data-i18n="setup.pass2">Passwort wiederholen</label>
+      <input class="fd-input" id="setup-pass2" type="password" autocomplete="new-password" minlength="12" required>
+      <p class="field-hint" data-i18n="setup.hint">Mindestens 12 Zeichen. Den zweiten Faktor richtest du danach unter Mein Konto ein.</p>
+      <p id="setup-error" class="login__error" hidden></p>
+      <button class="fd-button fd-button--emphasized" type="submit" data-i18n="setup.submit">Konto anlegen</button>
+    </form>
+  </section>
+
+  <!-- ============================== App ============================== -->
+  <section id="view-app" class="app" hidden>
+    <header class="fd-shellbar">
+      <div class="fd-shellbar__group fd-shellbar__group--product">
+        <button id="btn-tree" class="fd-button fd-button--transparent fd-shellbar__button only-mobile" type="button" aria-label="Ordner">&#9776;</button>
+        <a id="home" class="shell-home" href="#/start" data-i18n-title="home.tip" title="Zur Startseite">
+          <img src="icon.svg" alt="" class="shell-logo">
+          <span class="fd-shellbar__title">Wissen!</span>
+        </a>
+      </div>
+      <div class="fd-shellbar__group shell-search">
+        <input id="search" class="fd-input" type="search" autocomplete="off"
+               data-i18n-placeholder="search.placeholder" placeholder="Suchen …">
+      </div>
+      <div class="fd-shellbar__group fd-shellbar__group--actions">
+        <button id="btn-theme" class="fd-button fd-shellbar__button" type="button" aria-label="Theme">&#9680;</button>
+        <button id="btn-update" class="fd-button fd-shellbar__button upd-btn" type="button" hidden></button>
+        <a id="btn-settings" class="fd-button fd-shellbar__button" href="#/einstellungen/konto" aria-label="Einstellungen" data-i18n-title="set.title">&#9881;</a>
+        <button id="btn-logout" class="fd-button fd-shellbar__button" type="button" data-i18n="app.logout">Abmelden</button>
+      </div>
+    </header>
+
+    <div class="toolbar" id="archive-toolbar">
+      <div id="area-chips" class="chips" role="group" aria-label="Bereiche"></div>
+      <label class="toolbar__check">
+        <input type="checkbox" id="chk-recursive" checked>
+        <span data-i18n="list.recursive">mit Unterordnern</span>
+      </label>
+      <label class="toolbar__check">
+        <select id="sel-kind" class="fd-input kind-select" aria-label="Art">
+          <option value="" data-i18n="kind.all">Seiten und PDFs</option>
+          <option value="md" data-i18n="kind.pages">Nur Seiten</option>
+          <option value="pdf" data-i18n="kind.pdfs">Nur PDFs</option>
+        </select>
+      </label>
+      <label class="toolbar__check" id="best-wrap" data-i18n-title="sort.best.tip" hidden>
+        <input type="checkbox" id="chk-best">
+        <span data-i18n="sort.best">Beste Treffer zuerst</span>
+      </label>
+      <span id="status" class="toolbar__status"></span>
+    </div>
+
+    <div class="layout" id="archive-layout">
+      <aside id="tree-panel" class="tree-panel">
+        <div class="tree-tools">
+          <button id="tree-expand" class="fd-button fd-button--transparent tree-tool" type="button" data-i18n-title="tree.expand" title="Alle aufklappen">&#8862;</button>
+          <button id="tree-collapse" class="fd-button fd-button--transparent tree-tool" type="button" data-i18n-title="tree.collapse" title="Alle zuklappen">&#8863;</button>
+        </div>
+        <div id="tree" class="tree" role="tree"></div>
+        <div id="tag-panel" class="tag-panel" hidden>
+          <button id="tag-head" type="button" class="tag-panel__head" aria-expanded="true" aria-controls="tag-cloud">
+            <span class="tree-caret is-open">&#8250;</span>
+            <span class="tag-panel__title" data-i18n="tags.title">Tags</span>
+            <span class="tag-panel__n tree-count"></span>
+          </button>
+          <div id="tag-cloud" class="tag-cloud"></div>
+        </div>
+        <datalist id="tag-list"></datalist>
+      </aside>
+      <div class="splitter splitter--col" id="split-tree" role="separator" aria-orientation="vertical"></div>
+
+      <div class="work" id="work">
+      <main class="list-panel">
+        <div class="list-head">
+          <h2 id="list-title" class="fd-title fd-title--h5"></h2>
+          <span id="list-count" class="list-count"></span>
+          <span id="list-tagfilter" class="tag-row"></span>
+          <button id="btn-ask" class="fd-button fd-button--emphasized list-ask" type="button" hidden data-i18n="ask.btn" data-i18n-title="ask.btn.tip">KI fragen</button>
+          <a href="#/papierkorb" class="fd-button fd-button--transparent list-trash" data-i18n="trash.open">Papierkorb</a>
+          <button id="btn-new" class="fd-button" type="button" hidden data-i18n="new.page">Neue Seite</button>
+        </div>
+        <section id="ask-box" class="ask-box" hidden aria-live="polite">
+          <div class="ask-head">
+            <h3 class="fd-title fd-title--h5" data-i18n="ask.title">Antwort aus dem Archiv</h3>
+            <span id="ask-question" class="ask-question"></span>
+            <button id="ask-close" class="fd-button fd-button--transparent" type="button" data-i18n-title="ask.close" aria-label="Schließen">&#10005;</button>
+          </div>
+          <div id="ask-answer" class="ask-answer md"></div>
+          <div id="ask-sources" class="ask-sources" hidden></div>
+          <p id="ask-note" class="ask-note" hidden></p>
+        </section>
+        <div id="bulk" class="bulk" hidden>
+          <span id="bulk-count" class="bulk__count"></span>
+          <input id="bulk-tag" class="fd-input bulk__input" data-picker="tag-list" autocomplete="off" data-i18n-placeholder="tags.ph">
+          <button id="bulk-add" class="fd-button" type="button" data-i18n="tags.add">Tag hinzufügen</button>
+          <button id="bulk-remove" class="fd-button fd-button--transparent" type="button" data-i18n="tags.remove">Tag entfernen</button>
+          <button id="bulk-clear" class="fd-button fd-button--transparent" type="button" data-i18n="tags.clearsel">Auswahl aufheben</button>
+          <span id="bulk-msg" class="form-msg"></span>
+        </div>
+        <table class="fd-table doc-table">
+          <thead class="fd-table__header">
+            <tr class="fd-table__row">
+              <th class="fd-table__cell col-check"><input type="checkbox" id="chk-all" data-i18n-title="tags.selall"></th>
+              <th class="fd-table__cell col-date" data-sort-col="date"><button type="button" class="sort-head" data-sort="date"><span data-i18n="col.date">Datum</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+              <th class="fd-table__cell" data-sort-col="title"><button type="button" class="sort-head" data-sort="title"><span data-i18n="col.title">Titel</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+              <th class="fd-table__cell col-area" data-sort-col="area"><button type="button" class="sort-head" data-sort="area"><span data-i18n="col.area">Bereich</span><span class="sort-arrow" aria-hidden="true"></span></button></th>
+              <th class="fd-table__cell col-menu"></th>
+            </tr>
+          </thead>
+          <tbody id="doc-rows" class="fd-table__body"></tbody>
+        </table>
+        <p id="list-empty" class="list-empty" hidden data-i18n="list.empty">Keine Dokumente.</p>
+        <div class="list-more"><button id="btn-more" class="fd-button" type="button" hidden data-i18n="list.more">Mehr laden</button></div>
+      </main>
+
+      <div class="splitter" id="split-preview" role="separator" hidden></div>
+      <section id="preview" class="preview" hidden>
+        <div class="preview__bar">
+          <div class="preview__meta">
+            <div class="pv-titlerow"><div id="pv-title" class="preview__title"></div></div>
+            <div id="pv-sub" class="preview__sub"></div>
+          </div>
+          <a id="pv-open" class="fd-button" data-i18n="pv.open">Öffnen</a>
+          <a id="pv-download" class="fd-button" data-i18n="pv.download">Herunterladen</a>
+          <button id="pv-pin" class="fd-button fd-button--transparent pin-btn" type="button" aria-pressed="false">&#9734;</button>
+          <button id="pv-layout" class="fd-button fd-button--transparent pv-layout" type="button"></button>
+          <button id="pv-close" class="fd-button fd-button--transparent" type="button" aria-label="Schließen">&#10005;</button>
+        </div>
+        <div id="pv-tags" class="tag-edit pv-tags"></div>
+        <div id="pv-body" class="preview__body"></div>
+      </section>
+      </div>
+    </div>
+
+    <!-- ============================== Page view ============================== -->
+    <!-- ============================== Start page ============================== -->
+    <div id="startpage" class="startpage" hidden>
+      <div class="start-inner">
+        <section class="start-section">
+          <div class="start-head">
+            <h2 class="fd-title fd-title--h4" data-i18n="start.pinned">Angepinnt</h2>
+            <button id="start-new" class="fd-button start-new" type="button" hidden data-i18n="new.page">Neue Seite</button>
+          </div>
+          <div id="start-pins" class="start-pins"></div>
+          <p id="start-nopins" class="start-hint" hidden data-i18n="start.nopins"></p>
+        </section>
+        <section class="start-section">
+          <div class="start-head">
+            <h2 class="fd-title fd-title--h4" data-i18n="start.recent">Zuletzt geändert</h2>
+            <a href="#/papierkorb" class="start-all start-trash" data-i18n="trash.open">Papierkorb</a>
+            <a href="#/" class="start-all start-all--next" data-i18n="start.all">Alle Dokumente →</a>
+          </div>
+          <div id="start-recent" class="start-recent"></div>
+          <p id="start-norecent" class="start-hint" hidden data-i18n="start.norecent"></p>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================== Trash ============================== -->
+    <div id="trashpage" class="startpage" hidden>
+      <div class="start-inner">
+        <div class="start-head">
+          <h2 class="fd-title fd-title--h4" data-i18n="trash.title">Papierkorb</h2>
+          <a href="#/" class="start-all" data-i18n="set.back">← Zurück zum Archiv</a>
+        </div>
+        <p id="trash-note" class="start-hint"></p>
+        <table id="trash-table" class="fd-table doc-table trash-table">
+          <thead class="fd-table__header">
+            <tr class="fd-table__row">
+              <th class="fd-table__cell" data-i18n="trash.col.title">Titel</th>
+              <th class="fd-table__cell" data-i18n="trash.col.place">Lag in</th>
+              <th class="fd-table__cell" data-i18n="trash.col.deleted">Gelöscht am</th>
+              <th class="fd-table__cell" data-i18n="trash.col.left">Bleibt noch</th>
+              <th class="fd-table__cell"></th>
+            </tr>
+          </thead>
+          <tbody id="trash-rows" class="fd-table__body"></tbody>
+        </table>
+        <p id="trash-empty" class="start-hint" hidden data-i18n="trash.empty"></p>
+      </div>
+    </div>
+
+    <div id="pagepage" class="pagepage" hidden>
+      <div class="page-bar">
+        <a href="#/" class="settings-back" data-i18n="set.back">← Zurück zum Archiv</a>
+        <span id="page-crumbs" class="page-crumbs"></span>
+        <span class="spacer"></span>
+        <label class="zoom" data-i18n-title="zoom.tip"><span class="zoom__a" aria-hidden="true">A</span><input type="range" class="zoom__range" min="80" max="250" step="10" value="100" aria-label="Schriftgröße"><span class="zoom__a zoom__a--big" aria-hidden="true">A</span></label>
+        <label class="zoom" data-i18n-title="width.tip"><span class="zoom__w" aria-hidden="true"></span><input type="range" class="width__range" min="40" max="100" step="5" value="85" aria-label="Lesebreite"><span class="zoom__w zoom__w--wide" aria-hidden="true"></span></label>
+        <button id="page-edit" class="fd-button fd-button--emphasized" type="button" hidden data-i18n="ed.edit">Bearbeiten</button>
+        <button id="page-pin" class="fd-button fd-button--transparent pin-btn" type="button" aria-pressed="false">&#9734;</button>
+        <button id="page-source" class="fd-button fd-button--transparent" type="button" aria-pressed="false" data-i18n="page.source">Markdown</button>
+        <a id="page-download" class="fd-button fd-button--transparent" data-i18n="pv.download">Herunterladen</a>
+        <button id="page-menu" class="fd-button fd-button--transparent" type="button" data-i18n-title="ed.menu" aria-label="Mehr">&#8943;</button>
+      </div>
+      <div id="page-editor" class="page-editor" hidden>
+        <div class="ed-bar">
+          <span id="ed-title" class="ed-title"></span>
+          <span class="spacer"></span>
+          <span id="ed-state" class="ed-state" role="status"></span>
+          <label class="zoom" data-i18n-title="zoom.tip"><span class="zoom__a" aria-hidden="true">A</span><input type="range" class="zoom__range" min="80" max="250" step="10" value="100" aria-label="Schriftgröße"><span class="zoom__a zoom__a--big" aria-hidden="true">A</span></label>
+        <label class="zoom" data-i18n-title="width.tip"><span class="zoom__w" aria-hidden="true"></span><input type="range" class="width__range" min="40" max="100" step="5" value="85" aria-label="Lesebreite"><span class="zoom__w zoom__w--wide" aria-hidden="true"></span></label>
+          <span class="ed-modes" role="group" data-i18n-title="ed.mode">
+            <button id="ed-mode-source" class="fd-button fd-button--transparent" type="button" aria-pressed="true" data-i18n="ed.src">Quelltext</button>
+            <button id="ed-mode-rich" class="fd-button fd-button--transparent" type="button" aria-pressed="false" data-i18n="ed.rich">Formatiert</button>
+          </span>
+          <button id="ed-preview" class="fd-button fd-button--transparent" type="button" aria-pressed="true" data-i18n="ed.preview">Vorschau</button>
+          <button id="ed-save" class="fd-button" type="button" data-i18n="ed.save">Speichern</button>
+          <button id="ed-done" class="fd-button fd-button--emphasized" type="button" data-i18n="ed.done">Fertig</button>
+          <button id="ed-cancel" class="fd-button fd-button--transparent" type="button" data-i18n="ed.cancel">Abbrechen</button>
+        </div>
+        <div id="ed-tools" class="ed-tools" role="toolbar" hidden>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="undo" data-i18n-title="tb.undo">↶</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="redo" data-i18n-title="tb.redo">↷</button>
+            <span class="ed-sep"></span>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="bold" data-i18n-title="tb.bold"><b>F</b></button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="italic" data-i18n-title="tb.italic"><i>K</i></button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="strike" data-i18n-title="tb.strike"><s>S</s></button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="code" data-i18n-title="tb.code">&lt;&gt;</button>
+            <span class="ed-sep"></span>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="h1" data-i18n-title="tb.h1">H1</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="h2" data-i18n-title="tb.h2">H2</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="h3" data-i18n-title="tb.h3">H3</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="text" data-i18n-title="tb.text">¶</button>
+            <span class="ed-sep"></span>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="bullets" data-i18n-title="tb.bullets">•</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="numbers" data-i18n-title="tb.numbers">1.</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="task" data-i18n-title="tb.task">☑</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="outdent" data-i18n-title="tb.outdent">⇤</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="indent" data-i18n-title="tb.indent">⇥</button>
+            <span class="ed-sep"></span>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="quote" data-i18n-title="tb.quote">❝</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="codeblock" data-i18n-title="tb.codeblock">{ }</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="rule" data-i18n-title="tb.rule">―</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="link" data-i18n-title="tb.link">Link</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="image" data-i18n-title="tb.image">Bild</button>
+            <button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="table" data-i18n-title="tb.table">Tabelle</button>
+            <span class="ed-sep"></span>
+            <span id="ed-table-tools" class="ed-table-tools" hidden><button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="rowadd" data-i18n-title="tb.rowadd">+ Zeile</button><button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="coladd" data-i18n-title="tb.coladd">+ Spalte</button><button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="rowdel" data-i18n-title="tb.rowdel">− Zeile</button><button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="coldel" data-i18n-title="tb.coldel">− Spalte</button><button type="button" class="fd-button fd-button--transparent ed-tool" data-tool="tabledel" data-i18n-title="tb.tabledel">− Tabelle</button></span>
+          </div>
+        <input id="ed-file" type="file" hidden multiple>
+        <div class="ed-work">
+          <div id="ed-rich" class="ed-rich" hidden><div id="ed-rich-page" class="ed-rich-page md"></div></div>
+          <textarea id="ed-text" class="ed-text" spellcheck="true" autocomplete="off" autocapitalize="off" aria-label="Markdown"></textarea>
+          <article id="ed-view" class="ed-view md"></article>
+        </div>
+      </div>
+      <article id="page-body" class="page-body md"></article>
+      <p id="page-meta" class="page-meta"></p>
+    </div>
+
+    <!-- ============================== Settings page ============================== -->
+    <div id="settings" class="settings" hidden>
+      <nav class="settings-nav" aria-label="Einstellungen">
+        <a href="#/" class="settings-back" data-i18n="set.back">← Zurück zum Archiv</a>
+        <h2 class="fd-title fd-title--h4" data-i18n="set.title">Einstellungen</h2>
+        <a class="set-link" href="#/einstellungen/konto" data-pane="account" data-i18n="set.account">Mein Konto</a>
+        <a class="set-link admin-only" href="#/einstellungen/benutzer" data-pane="users" data-i18n="set.users">Benutzer</a>
+        <a class="set-link admin-only" href="#/einstellungen/ablage" data-pane="storage" data-i18n="set.storage">Ablage</a>
+        <a class="set-link admin-only" href="#/einstellungen/ki" data-pane="ai" data-i18n="set.ai">KI</a>
+        <a class="set-link admin-only" href="#/einstellungen/sicherheit" data-pane="security" data-i18n="set.security">Sicherheit</a>
+        <a class="set-link admin-only" href="#/einstellungen/api" data-pane="api" data-i18n="set.api">API</a>
+        <a class="set-link admin-only" href="#/einstellungen/system" data-pane="system" data-i18n="set.system">System</a>
+      </nav>
+      <div class="settings-body">
+
+        <section class="set-pane" data-pane="account">
+          <h3 class="fd-title fd-title--h4" data-i18n="set.account">Mein Konto</h3>
+          <p id="acc-who" class="set-hint"></p>
+          <p class="only-mobile-block"><button id="acc-logout" class="fd-button" type="button" data-i18n="app.logout">Abmelden</button></p>
+          <div class="form-grid card acc-lang">
+            <label class="fd-form-label" for="acc-lang" data-i18n="acc.lang">Sprache</label>
+            <div>
+              <select id="acc-lang" class="fd-input">
+                <option value="de">Deutsch</option>
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="it">Italiano</option>
+              </select>
+              <div class="field-hint" data-i18n="acc.lang.hint">Gilt für dieses Konto auf allen Geräten.</div>
+            </div>
+          </div>
+          <form id="pw-form" class="form-grid card">
+            <label class="fd-form-label" for="pw-old" data-i18n="acc.old">Aktuelles Passwort</label>
+            <input class="fd-input" id="pw-old" type="password" autocomplete="current-password" required>
+            <label class="fd-form-label" for="pw-new" data-i18n="acc.new">Neues Passwort</label>
+            <input class="fd-input" id="pw-new" type="password" autocomplete="new-password" minlength="12" required>
+            <span></span>
+            <div><button class="fd-button fd-button--emphasized" type="submit" data-i18n="acc.change">Passwort ändern</button>
+            <span id="pw-msg" class="form-msg"></span></div>
+          </form>
+          <div id="mfa-card" class="card mfa-card">
+            <h4 class="fd-title fd-title--h5 card-title" data-i18n="mfa.title">Zweiter Faktor</h4>
+            <p id="mfa-state" class="set-hint"></p>
+            <form id="mfa-start" class="form-grid" hidden>
+              <label class="fd-form-label" for="mfa-pass" data-i18n="acc.old">Aktuelles Passwort</label>
+              <input class="fd-input" id="mfa-pass" type="password" autocomplete="current-password" required>
+              <span></span>
+              <div><button class="fd-button fd-button--emphasized" type="submit" data-i18n="mfa.setup">Einrichten</button>
+              <span id="mfa-msg-start" class="form-msg"></span></div>
+            </form>
+            <div id="mfa-setup" hidden>
+              <p class="set-hint" data-i18n="mfa.scan">Scanne den Code mit einer Authenticator-App (zum Beispiel Bitwarden, 2FAS, Aegis oder Google Authenticator) und gib dann die sechs Ziffern ein, die sie anzeigt.</p>
+              <div class="mfa-qr"><img id="mfa-qr" alt="QR-Code"></div>
+              <p class="field-hint"><span data-i18n="mfa.manual">Oder von Hand eingeben:</span> <code id="mfa-secret" class="mfa-secret"></code></p>
+              <form id="mfa-confirm" class="form-grid">
+                <label class="fd-form-label" for="mfa-code" data-i18n="login.code">Code aus der App</label>
+                <input class="fd-input" id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required>
+                <span></span>
+                <div><button class="fd-button fd-button--emphasized" type="submit" data-i18n="mfa.confirm">Einschalten</button>
+                <button id="mfa-abort" class="fd-button fd-button--transparent" type="button" data-i18n="btn.cancel">Abbrechen</button>
+                <span id="mfa-msg-confirm" class="form-msg"></span></div>
+              </form>
+            </div>
+            <div id="mfa-codes" hidden>
+              <p class="set-hint" data-i18n="mfa.codes.hint">Deine Wiederherstellungscodes. Mit jedem kommst du einmal hinein, falls das Telefon weg ist. Lege sie jetzt sicher ab, zum Beispiel im Passwortmanager. Wissen! zeigt sie nicht noch einmal.</p>
+              <pre id="mfa-code-list" class="mfa-code-list"></pre>
+              <div class="form-actions">
+                <button id="mfa-copy" class="fd-button" type="button" data-i18n="mfa.copy">Kopieren</button>
+                <button id="mfa-done" class="fd-button fd-button--emphasized" type="button" data-i18n="mfa.done">Ich habe sie gesichert</button>
+              </div>
+            </div>
+            <div id="mfa-on" hidden>
+              <form id="mfa-renew" class="form-grid">
+                <label class="fd-form-label" for="mfa-renew-code" data-i18n="login.code">Code aus der App</label>
+                <input class="fd-input" id="mfa-renew-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required>
+                <span></span>
+                <div><button class="fd-button" type="submit" data-i18n="mfa.renew">Neue Wiederherstellungscodes</button>
+                <span id="mfa-msg-renew" class="form-msg"></span></div>
+              </form>
+              <details class="mfa-disable">
+                <summary data-i18n="mfa.off">Zweiten Faktor ausschalten</summary>
+                <form id="mfa-off-form" class="form-grid">
+                  <label class="fd-form-label" for="mfa-off-pass" data-i18n="acc.old">Aktuelles Passwort</label>
+                  <input class="fd-input" id="mfa-off-pass" type="password" autocomplete="current-password" required>
+                  <label class="fd-form-label" for="mfa-off-code" data-i18n="mfa.code.or">Code oder Wiederherstellungscode</label>
+                  <input class="fd-input" id="mfa-off-code" autocomplete="one-time-code" maxlength="20" required>
+                  <span></span>
+                  <div><button class="fd-button fd-button--negative" type="submit" data-i18n="mfa.off.btn">Ausschalten</button>
+                  <span id="mfa-msg-off" class="form-msg"></span></div>
+                </form>
+              </details>
+            </div>
+          </div>
+          <div class="card">
+            <div class="pane-head">
+              <h4 class="fd-title fd-title--h5 card-title" data-i18n="ses.title">Angemeldete Geräte</h4>
+              <button id="ses-others" class="fd-button" type="button" data-i18n="ses.others">Alle anderen abmelden</button>
+            </div>
+            <table class="fd-table ses-table">
+              <tbody id="ses-rows" class="fd-table__body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="set-pane" data-pane="users" hidden>
+          <div class="pane-head">
+            <h3 class="fd-title fd-title--h4" data-i18n="set.users">Benutzer</h3>
+            <button id="usr-new" class="fd-button fd-button--emphasized" type="button" data-i18n="usr.new">Neuer Benutzer</button>
+          </div>
+          <table class="fd-table card">
+            <thead class="fd-table__header"><tr class="fd-table__row">
+              <th class="fd-table__cell" data-i18n="usr.name">Benutzer</th>
+              <th class="fd-table__cell" data-i18n="usr.role">Rolle</th>
+              <th class="fd-table__cell" data-i18n="usr.areas">Bereiche</th>
+              <th class="fd-table__cell" data-i18n="usr.mfa">Zweiter Faktor</th>
+              <th class="fd-table__cell"></th>
+            </tr></thead>
+            <tbody id="usr-rows" class="fd-table__body"></tbody>
+          </table>
+          <form id="usr-form" class="card usr-form" hidden>
+            <h4 id="usr-form-title" class="fd-title fd-title--h5"></h4>
+            <div class="form-grid">
+              <label class="fd-form-label" for="usr-name" data-i18n="usr.name">Benutzer</label>
+              <input class="fd-input" id="usr-name" autocomplete="off" pattern="[a-z0-9][a-z0-9._-]{0,31}" required>
+              <label class="fd-form-label" for="usr-display" data-i18n="usr.display">Anzeigename</label>
+              <input class="fd-input" id="usr-display" autocomplete="off">
+              <label class="fd-form-label" for="usr-pass" data-i18n="usr.pass">Passwort</label>
+              <input class="fd-input" id="usr-pass" type="password" autocomplete="new-password" minlength="12">
+              <span></span>
+              <label class="check"><input type="checkbox" id="usr-admin"> <span data-i18n="usr.admin">Administrator</span></label>
+              <span class="fd-form-label" data-i18n="usr.areas">Bereiche</span>
+              <div id="usr-areas" class="area-perms"></div>
+              <span class="usr-existing"></span>
+              <label class="check usr-existing"><input type="checkbox" id="usr-signout"> <span data-i18n="usr.signout">Auf allen Geräten abmelden</span></label>
+              <span class="usr-mfa-reset"></span>
+              <label class="check usr-mfa-reset"><input type="checkbox" id="usr-reset-totp"> <span data-i18n="usr.resettotp">Zweiten Faktor zurücksetzen (wenn das Telefon verloren ist)</span></label>
+            </div>
+            <div class="form-actions">
+              <span id="usr-msg" class="form-msg"></span>
+              <button id="usr-cancel" class="fd-button" type="button" data-i18n="btn.cancel">Abbrechen</button>
+              <button class="fd-button fd-button--emphasized" type="submit" data-i18n="btn.save">Speichern</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="set-pane" data-pane="storage" hidden>
+          <h3 class="fd-title fd-title--h4" data-i18n="set.storage">Ablage</h3>
+          <p class="set-hint" data-i18n="st.intro">Wo das Archiv liegt und aus welchen Ordnern neue Dokumente kommen. Zur Auswahl stehen die Ordner, die dem Container zur Verfügung stehen.</p>
+          <form id="st-form" autocomplete="off">
+            <div class="card">
+              <h4 class="fd-title fd-title--h5 card-title" data-i18n="st.archive">Archivordner</h4>
+              <div class="form-grid">
+                <label class="fd-form-label" for="st-archive" data-i18n="st.path">Pfad</label>
+                <div>
+                  <div class="inline">
+                    <input class="fd-input" id="st-archive" autocomplete="off">
+                    <button class="fd-button" type="button" data-pick="st-archive" data-i18n="st.browse">Durchsuchen</button>
+                  </div>
+                  <div id="st-archive-status" class="field-hint"></div>
+                </div>
+              </div>
+              <div class="picker" data-for="st-archive" hidden></div>
+            </div>
+
+            <div class="card">
+              <h4 class="fd-title fd-title--h5 card-title" data-i18n="st.trash">Papierkorb</h4>
+              <p class="set-hint" data-i18n="st.trash.hint">Gelöschte Dokumente liegen im Papierkorb (.papierkorb im Archiv). Nach dieser Frist löscht Wissen! sie einmal am Tag endgültig. 0 heißt: nie.</p>
+              <div class="form-grid">
+                <label class="fd-form-label" for="st-trash-days" data-i18n="st.trash.days">Endgültig löschen nach</label>
+                <div class="inline"><input class="fd-input st-trash-days" id="st-trash-days" type="number" min="0" max="3650" step="1"> <span data-i18n="st.trash.unit">Tagen</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h4 class="fd-title fd-title--h5 card-title" data-i18n="st.areas">Bereiche</h4>
+              <p class="set-hint" data-i18n="st.areas.hint">Anzeigename je Bereich.</p>
+              <div id="st-areas" class="form-grid"></div>
+              <h5 class="fd-title fd-title--h6 st-newarea-title" data-i18n="st.area.new">Neuer Bereich</h5>
+              <p class="set-hint" data-i18n="st.area.hint2"></p>
+              <div class="inline st-newarea">
+                <input id="st-area-name" class="fd-input" maxlength="40" autocomplete="off" data-i18n-placeholder="st.area.name.ph">
+                <input id="st-area-label" class="fd-input" maxlength="40" autocomplete="off" data-i18n-placeholder="st.area.label.ph">
+                <button id="st-area-add" class="fd-button" type="button" data-i18n="st.area.add">Bereich anlegen</button>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <span id="st-msg" class="form-msg"></span>
+              <button class="fd-button fd-button--emphasized" type="submit" data-i18n="btn.save">Speichern</button>
+            </div>
+          </form>
+
+        </section>
+
+        <section class="set-pane" data-pane="ai" hidden>
+          <h3 class="fd-title fd-title--h4" data-i18n="set.ai">KI</h3>
+          <p class="set-hint" data-i18n="ai.intro">Wie Wissen! mit künstlicher Intelligenz zusammenarbeitet.</p>
+          <div class="card mcp-card">
+            <h4 class="fd-title fd-title--h5" data-i18n="mcp.title">Zugang für KI-Assistenten (MCP)</h4>
+            <p class="set-hint" data-i18n="mcp.hint"></p>
+            <label class="check"><input type="checkbox" id="mcp-on"> <span data-i18n="mcp.on">MCP-Zugang einschalten</span></label>
+            <div class="form-grid mcp-grid">
+              <span class="fd-form-label" data-i18n="mcp.url">Adresse</span>
+              <code id="mcp-url" class="mcp-url"></code>
+            </div>
+            <p class="set-hint mcp-keys"><span data-i18n="mcp.keys"></span> <a class="fd-link" href="#/einstellungen/api" data-i18n="mcp.keys.link">Zu den API-Schlüsseln</a></p>
+            <span id="mcp-msg" class="form-msg" role="status"></span>
+          </div>
+          <form id="ai-form" class="card" autocomplete="off" data-bwignore="true">
+            <h4 class="fd-title fd-title--h5 ask-set-title" data-i18n="ask.set.title">Fragen ans Archiv</h4>
+            <p class="set-hint" data-i18n="ask.set.hint"></p>
+            <div class="form-grid">
+              <span></span>
+              <label class="check"><input type="checkbox" id="ai-enabled"> <span data-i18n="ai.enabled">KI-Vorschläge verwenden</span></label>
+              <label class="fd-form-label" for="ai-provider" data-i18n="ai.provider">Anbieter</label>
+              <select class="fd-input" id="ai-provider">
+                <option value="anthropic">Claude (Anthropic)</option>
+                <option value="ollama" data-i18n="ai.ollama">Ollama (eigener Server)</option>
+                <option value="openai" data-i18n="ai.openai">Anderer OpenAI-kompatibler Server</option>
+              </select>
+              <label class="fd-form-label ai-openai-only" for="ai-baseurl" data-i18n="ai.baseurl">Server-Adresse</label>
+              <input class="fd-input ai-openai-only" id="ai-baseurl" placeholder="http://ollama-server:11434" autocomplete="off">
+              <label class="fd-form-label" for="ai-model" data-i18n="ai.model">Modell</label>
+              <div>
+                <div class="inline">
+                  <select class="fd-input" id="ai-model-select"></select>
+                  <button id="ai-reload-models" class="fd-button fd-button--transparent" type="button" data-i18n-title="ai.reload" aria-label="Liste neu laden">&#8635;</button>
+                </div>
+                <input class="fd-input" id="ai-model" autocomplete="off" placeholder="z. B. qwen3:14b" hidden>
+                <div id="ai-models-note" class="field-hint"></div>
+                <div id="ai-price" class="field-hint"></div>
+              </div>
+              <label class="fd-form-label" for="ai-key" data-i18n="ai.key">API-Schlüssel</label>
+              <div class="inline">
+                <input class="fd-input masked" id="ai-key" name="ai-credential" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-bwignore="true" data-1p-ignore="true" data-lpignore="true" data-form-type="other">
+                <button id="ai-clear-key" class="fd-button fd-button--transparent" type="button" data-i18n="ai.clearkey">Entfernen</button>
+              </div>
+              <label class="fd-form-label" for="ai-limit" data-i18n="ai.limit">Monatslimit (USD)</label>
+              <div>
+                <input class="fd-input ai-limit" id="ai-limit" type="number" min="0" step="1">
+                <div id="ai-usage" class="field-hint"></div>
+              </div>
+              <span class="fd-form-label" data-i18n="ai.exclude">Nie an die KI senden</span>
+              <div id="ai-exclude" class="area-checks"></div>
+            </div>
+            <div class="form-actions">
+              <span id="ai-msg" class="form-msg"></span>
+              <button id="ai-test" class="fd-button" type="button" data-i18n="ai.test">Verbindung testen</button>
+              <button class="fd-button fd-button--emphasized" type="submit" data-i18n="btn.save">Speichern</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="set-pane" data-pane="security" hidden>
+          <h3 class="fd-title fd-title--h4" data-i18n="set.security">Sicherheit</h3>
+          <p id="sec-where" class="set-hint"></p>
+          <form id="sec-form" autocomplete="off" data-bwignore="true">
+            <div class="card">
+              <h4 class="fd-title fd-title--h5 card-title" data-i18n="sec.policy">Anmeldung</h4>
+              <label class="check"><input type="checkbox" id="sec-ext"> <span data-i18n="sec.ext">Von außen nur mit zweitem Faktor</span></label>
+              <p class="field-hint sec-hint" data-i18n="sec.ext.hint">Konten ohne zweiten Faktor können sich dann nur noch im Heimnetz anmelden. Einschalten lässt sich das erst, wenn dein eigenes Konto einen hat.</p>
+              <p id="sec-without" class="field-hint sec-hint is-warn" hidden></p>
+              <label class="check"><input type="checkbox" id="sec-int"> <span data-i18n="sec.int">Zweiten Faktor auch im Heimnetz verlangen</span></label>
+              <p class="field-hint sec-hint" data-i18n="sec.int.hint">Sonst reicht zu Hause das Passwort. Von außen fragt Wissen! immer nach dem Code, wenn ein Konto einen zweiten Faktor hat.</p>
+            </div>
+            <div class="card">
+              <h4 class="fd-title fd-title--h5 card-title" data-i18n="sec.nets">Heimnetz</h4>
+              <p class="field-hint sec-hint" data-i18n="sec.nets.hint">Adressbereiche, die als „zu Hause“ gelten (LAN, VPN). Alles andere ist „von außen“. Leer lassen für die Vorgabe.</p>
+              <textarea class="fd-input sec-nets" id="sec-nets" rows="3" spellcheck="false" autocapitalize="off"></textarea>
+              <p id="sec-nets-here" class="field-hint sec-hint"></p>
+            </div>
+            <div class="card">
+              <h4 class="fd-title fd-title--h5 card-title" data-i18n="sec.ntfy">Benachrichtigungen per ntfy</h4>
+              <div class="form-grid">
+                <label class="fd-form-label" for="sec-url" data-i18n="sec.url">Topic-Adresse</label>
+                <input class="fd-input" id="sec-url" placeholder="https://ntfy.example.org/wissen" autocomplete="off" spellcheck="false">
+                <label class="fd-form-label" for="sec-token" data-i18n="sec.token">Zugangs-Token</label>
+                <div class="inline">
+                  <input class="fd-input masked" id="sec-token" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-bwignore="true" data-1p-ignore="true" data-lpignore="true" data-form-type="other">
+                  <button id="sec-clear-token" class="fd-button fd-button--transparent" type="button" data-i18n="ai.clearkey">Entfernen</button>
+                </div>
+                <span class="fd-form-label" data-i18n="sec.when">Melden bei</span>
+                <div class="sec-checks">
+                  <label class="check"><input type="checkbox" id="sec-n-ext"> <span data-i18n="sec.n.ext">jeder Anmeldung von außen</span></label>
+                  <label class="check"><input type="checkbox" id="sec-n-lock"> <span data-i18n="sec.n.lock">gesperrtem Konto nach Fehlversuchen</span></label>
+                  <label class="check"><input type="checkbox" id="sec-n-2fa"> <span data-i18n="sec.n.2fa">Änderungen am zweiten Faktor und benutzten Wiederherstellungscodes</span></label>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <span id="sec-msg" class="form-msg"></span>
+              <button id="sec-test" class="fd-button" type="button" data-i18n="sec.test">Testnachricht</button>
+              <button class="fd-button fd-button--emphasized" type="submit" data-i18n="btn.save">Speichern</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="set-pane" data-pane="api" hidden>
+          <h3 class="fd-title fd-title--h4" data-i18n="set.api">API</h3>
+          <p class="set-hint" data-i18n="api.intro">Alles, was die Oberfläche kann, geht auch per REST-API unter /api/, für Skripte, Kurzbefehle oder Home Assistant.</p>
+          <div class="card">
+            <h4 class="fd-title fd-title--h5 card-title" data-i18n="api.keys">API-Schlüssel</h4>
+            <p class="field-hint" data-i18n="api.keys.hint">Jedes Programm bekommt seinen eigenen Schlüssel, dann lässt sich einer allein widerrufen. „Lesen und schreiben“ öffnet alles wie ein Administrator, „Nur lesen“ zeigt alle Bereiche, ändert aber nichts.</p>
+            <table class="fd-table api-keys">
+              <thead class="fd-table__header"><tr class="fd-table__row">
+                <th class="fd-table__cell" data-i18n="api.col.name">Name</th>
+                <th class="fd-table__cell" data-i18n="api.col.right">Recht</th>
+                <th class="fd-table__cell" data-i18n="api.col.made">Angelegt</th>
+                <th class="fd-table__cell" data-i18n="api.col.last">Zuletzt benutzt</th>
+                <th class="fd-table__cell"></th>
+              </tr></thead>
+              <tbody id="api-rows" class="fd-table__body"></tbody>
+            </table>
+            <p id="api-none" class="field-hint" hidden data-i18n="api.none2">Noch kein Schlüssel. Die API geht dann nur mit angemeldetem Browser.</p>
+            <div class="inline api-new">
+              <input id="api-name" class="fd-input" maxlength="60" autocomplete="off" data-i18n-placeholder="api.name.ph" placeholder="Name, z. B. Claude oder Home Assistant">
+              <select id="api-right" class="fd-input">
+                <option value="write" data-i18n="api.right.write">Lesen und schreiben</option>
+                <option value="read" data-i18n="api.right.read">Nur lesen</option>
+              </select>
+              <button id="api-add" class="fd-button fd-button--emphasized" type="button" data-i18n="api.add">Schlüssel anlegen</button>
+            </div>
+            <div id="api-fresh" class="api-fresh" hidden>
+              <p class="field-hint" data-i18n="api.fresh">Das ist der neue Schlüssel. Jetzt kopieren – er wird nur einmal gezeigt.</p>
+              <div class="inline api-key-row">
+                <input class="fd-input api-key" id="api-key" type="text" readonly autocomplete="off" spellcheck="false" data-bwignore="true" data-1p-ignore="true" data-lpignore="true" data-form-type="other">
+                <button id="api-copy" class="fd-button" type="button" data-i18n="api.copy">Kopieren</button>
+              </div>
+              <pre class="api-example"><code id="api-example"></code></pre>
+            </div>
+            <p id="api-msg" class="form-msg"></p>
+          </div>
+          <div class="card">
+            <h4 class="fd-title fd-title--h5 card-title" data-i18n="api.ref">Beschreibung aller Endpunkte</h4>
+            <p class="field-hint" data-i18n="api.ref.hint">Wissen! beschreibt seine API selbst: jeder Endpunkt mit Parametern und Antwort, direkt im Browser ausprobierbar (mit deiner Anmeldung).</p>
+            <p><a class="fd-link" href="/api/docs" target="_blank" rel="noopener" data-i18n="api.open">API-Beschreibung öffnen</a> · <a class="fd-link" href="/api/openapi.json" target="_blank" rel="noopener">openapi.json</a> · <a class="fd-link" id="api-guide" href="https://worldgate.de/ordnung/api/" target="_blank" rel="noopener" data-i18n="api.guide">Anleitung mit Beispielen</a></p>
+          </div>
+        </section>
+
+        <section class="set-pane" data-pane="system" hidden>
+          <h3 class="fd-title fd-title--h4" data-i18n="set.system">System</h3>
+          <div class="card">
+            <dl id="sys-info" class="sys-info"></dl>
+            <button id="sys-rescan" class="fd-button" type="button" data-i18n="sys.rescan">Ordner jetzt neu einlesen</button>
+          </div>
+          <form id="sys-form" class="card admin-only" autocomplete="off">
+            <h4 class="fd-title fd-title--h5 card-title" data-i18n="sys.work">Hintergrundarbeit</h4>
+            <label class="check"><input type="checkbox" id="sys-ocr"> <span data-i18n="sys.f.ocr">Texterkennung für Scans</span></label>
+            <p class="field-hint sec-hint" data-i18n="sys.f.ocr.hint">Liest Text aus gescannten Seiten, damit die Suche sie findet. Aus: nur Dokumente mit eingebettetem Text werden durchsuchbar.</p>
+            <div class="form-grid">
+              <label class="fd-form-label" for="sys-lang" data-i18n="sys.f.lang">Sprachen</label>
+              <div>
+                <input class="fd-input" id="sys-lang" spellcheck="false" autocapitalize="off" placeholder="deu+eng">
+                <p id="sys-lang-hint" class="field-hint"></p>
+              </div>
+              <label class="fd-form-label" for="sys-pages" data-i18n="sys.f.pages">Höchstens Seiten je Dokument</label>
+              <input class="fd-input sys-num" id="sys-pages" type="number" min="1" max="1000">
+              <label class="fd-form-label" for="sys-rescan-min" data-i18n="sys.f.rescan">Neu einlesen alle (Min.)</label>
+              <input class="fd-input sys-num" id="sys-rescan-min" type="number" min="1" max="1440">
+              <label class="fd-form-label" for="sys-workers" data-i18n="sys.f.workers">Dokumente gleichzeitig lesen</label>
+              <div>
+                <input class="fd-input sys-num" id="sys-workers" type="number" min="1" max="16">
+                <p id="sys-workers-hint" class="field-hint"></p>
+              </div>
+            </div>
+            <p class="field-hint" data-i18n="sys.f.hint">Änderungen gelten sofort, ohne Neustart. Schon gelesene Dokumente werden nicht noch einmal gelesen.</p>
+            <div class="form-actions">
+              <span id="sys-msg" class="form-msg"></span>
+              <button id="sys-defaults" class="fd-button fd-button--transparent" type="button" data-i18n="sys.f.defaults">Standardwerte</button>
+              <button class="fd-button fd-button--emphasized" type="submit" data-i18n="btn.save">Speichern</button>
+            </div>
+          </form>
+          <div id="upd-card" class="card admin-only">
+            <h4 class="fd-title fd-title--h5 card-title" data-i18n="upd.card">Neue Versionen</h4>
+            <label class="check"><input type="checkbox" id="upd-on"> <span data-i18n="upd.f.on">Einmal am Tag nach neuen Versionen sehen</span></label>
+            <p class="field-hint sec-hint" data-i18n="upd.f.hint"></p>
+            <p id="upd-state" class="set-hint"></p>
+            <div class="form-actions">
+              <span id="upd-msg" class="form-msg"></span>
+              <button id="upd-check" class="fd-button" type="button" data-i18n="upd.check">Jetzt prüfen</button>
+            </div>
+          </div>
+          <div id="sys-errors" class="card sys-errors" hidden>
+            <h4 class="fd-title fd-title--h5 card-title" data-i18n="sys.err.title">Dokumente ohne lesbaren Text</h4>
+            <p class="set-hint" data-i18n="sys.err.hint"></p>
+            <ul id="sys-err-list" class="sys-err-list"></ul>
+            <button id="sys-err-retry" class="fd-button" type="button" data-i18n="sys.err.retry">Erneut lesen</button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </section>
+
+  <dialog id="ver-dlg" class="ai-dlg ver-dlg" aria-labelledby="ver-title">
+    <div class="ver-head">
+      <h4 id="ver-title" class="fd-title fd-title--h5"></h4>
+      <span class="spacer"></span>
+      <button id="ver-close" class="fd-button fd-button--transparent" type="button" data-i18n-title="ver.close" aria-label="Schließen">&#10005;</button>
+    </div>
+    <div class="ver-body">
+      <ul id="ver-list" class="ver-list"></ul>
+      <div class="ver-main">
+        <div class="ver-bar">
+          <span class="ed-modes" role="group">
+            <button id="ver-mode-diff" class="fd-button fd-button--transparent" type="button" aria-pressed="true" data-i18n="ver.diff">Vergleich mit jetzt</button>
+            <button id="ver-mode-text" class="fd-button fd-button--transparent" type="button" aria-pressed="false" data-i18n="ver.text">Text dieser Fassung</button>
+          </span>
+          <span class="spacer"></span>
+          <button id="ver-restore" class="fd-button fd-button--emphasized" type="button" data-i18n="ver.restore">Diese Fassung zurückholen</button>
+        </div>
+        <p id="ver-legend" class="ver-legend" data-i18n="ver.legend"></p>
+        <div id="ver-view" class="ver-view"></div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="ask-dlg" class="ai-dlg ed-dlg" aria-labelledby="ask-title">
+    <form id="ask-form" class="ai-dlg-form" method="dialog">
+      <h4 id="ask-title" class="fd-title fd-title--h5"></h4>
+      <p id="ask-text" class="set-hint" hidden></p>
+      <div id="ask-fields" class="form-grid"></div>
+      <p id="ask-error" class="ask-error" role="alert" hidden></p>
+      <div class="form-actions">
+        <button id="ask-cancel" class="fd-button fd-button--transparent" type="button" data-i18n="ed.cancel">Abbrechen</button>
+        <button id="ask-ok" class="fd-button fd-button--emphasized" type="submit"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="upd-dlg" class="ai-dlg ed-dlg upd-dlg" aria-labelledby="upd-dlg-title">
+    <div class="ai-dlg-form">
+      <h4 id="upd-dlg-title" class="fd-title fd-title--h5"></h4>
+      <p id="upd-dlg-intro" class="set-hint"></p>
+      <h5 class="upd-sub" data-i18n="upd.how">So aktualisierst du</h5>
+      <ul class="upd-how">
+        <li><b>Forgejo:</b> <span data-i18n="upd.forgejo"></span></li>
+        <li><b>Unraid:</b> <span data-i18n="upd.unraid"></span></li>
+        <li><b>Docker Compose:</b> <span data-i18n="upd.compose"></span>: <code>git pull &amp;&amp; docker compose up -d --build</code></li>
+      </ul>
+      <h5 class="upd-sub" data-i18n="upd.notes">Was ist neu</h5>
+      <div id="upd-dlg-notes" class="upd-notes"></div>
+      <div class="form-actions">
+        <a id="upd-dlg-link" class="fd-button fd-button--transparent" target="_blank" rel="noopener" data-i18n="upd.release">Alle Änderungen</a>
+        <button id="upd-dlg-close" class="fd-button fd-button--emphasized" type="button" data-i18n="upd.close">Schließen</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+
+  <script src="vendor/marked/marked.min.js"></script>
+  <script src="vendor/purify/purify.min.js"></script>
+  <script src="app.js"></script>
+  <script src="i18n-fr.js"></script>
+  <script src="i18n-it.js"></script>
+</body>
+</html>

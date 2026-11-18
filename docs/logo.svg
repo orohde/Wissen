@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 130">
+  <title>Wissen!</title>
+  <rect width="130" height="130" rx="28" fill="#0a2a5c"/>
+  <circle cx="54" cy="54" r="28" fill="#4da3ff"/>
+  <path d="M40 72 L68 72 L64 86 L44 86 Z" fill="#4da3ff"/>
+  <rect x="42" y="86" width="24" height="8" rx="3" fill="#0070f2"/>
+  <rect x="45" y="96" width="18" height="8" rx="3" fill="#2b5fa8"/>
+  <path d="M46 74 L46 58 Q50 50 54 58 Q58 50 62 58 L62 74" fill="none" stroke="#0a2a5c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="96" y="28" width="12" height="56" rx="6" fill="#ffb020"/>
+  <circle cx="102" cy="97" r="7" fill="#ffb020"/>
+</svg>

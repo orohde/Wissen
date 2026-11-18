@@ -1,0 +1,15 @@
+# Example deployment. Adjust the host paths, start it and open the page:
+# the first visit (from the home network) creates the first administrator.
+# Everything else is set in the app under Settings.
+services:
+  wissen:
+    image: ghcr.io/orohde/wissen:latest
+    container_name: wissen
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8460}:8000"
+    volumes:
+      - ./wissen:/wissen      # your pages (.md) and PDFs – every folder directly below is an area
+      - ./data:/data          # index, settings, accounts
+    environment:
+      - TZ=Europe/Berlin

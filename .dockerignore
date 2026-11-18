@@ -1,0 +1,13 @@
+.git
+.venv
+.claude
+.forgejo
+data
+wissen
+tests
+**/__pycache__
+*.egg-info
+editor
+docs
+.github
+tools

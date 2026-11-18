@@ -1,0 +1,16 @@
+{
+  "name": "wissen-editor",
+  "private": true,
+  "version": "1.0.0",
+  "description": "The WYSIWYG editor of Wissen!: the Milkdown core with block-wise write-back",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/editor.js --bundle --format=iife --minify --target=es2020 --legal-comments=none --outfile=../src/wissen/static/vendor/milkdown/wissen-editor.js"
+  },
+  "dependencies": {
+    "@milkdown/kit": "7.23.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
