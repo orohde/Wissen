@@ -893,3 +893,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .ask-source__text { overflow-wrap: anywhere; }
 .ask-note { margin: 0.75rem 0 0; }
 .ask-set-title { margin: 0 0 0.5rem; }
+
+/* ------------------------------------------------------------ Wissen!: small things */
+.ed-tool.is-active { background: var(--sapButton_Selected_Background, #edf6ff); color: var(--sapButton_Selected_TextColor, #0064d9); }
+.trash-purge { color: var(--sapNegativeTextColor, #aa0808); }
+.start-pins .start-card[draggable="true"] { cursor: grab; }
+.start-card.is-dragging { opacity: 0.45; }

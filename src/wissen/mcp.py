@@ -12,6 +12,8 @@ versions and the trash behave the same.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 from types import SimpleNamespace
 from typing import Any, Callable
@@ -24,6 +26,7 @@ from .auth import User, current_user
 from .index import HL_END, HL_START
 
 PROTOCOLS = ("2025-06-18", "2025-03-26", "2024-11-05")
+MAX_ATTACHMENT = 10 * 1024 * 1024       # through this tool; larger files go over the REST route
 
 INSTRUCTIONS = (
     "Wissen! is a folder-based archive of Markdown pages and PDFs. Documents live in areas "
@@ -136,6 +139,18 @@ def build_tools(ops: SimpleNamespace) -> dict[str, dict]:
         body = (body + "\n\n" if body else "") + text.strip("\n") + "\n"
         return _saved(ops.page_save(id, ContentIn(text=body, base_version=content["version"], body_only=True), user=user))
 
+    def add_attachment(user: User, id: str, name: str, data_base64: str):
+        try:
+            data = base64.b64decode(data_base64, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ToolError("data_base64 is not valid base64") from exc
+        if len(data) > MAX_ATTACHMENT:
+            raise ToolError(f"attachment too large for this tool (at most {MAX_ATTACHMENT // 1024 // 1024} MB)")
+        saved = ops.asset_save(id, name, data, user)
+        picture = name.lower().rsplit(".", 1)[-1] in ("png", "jpg", "jpeg", "gif", "webp", "svg")
+        label = name.rsplit(".", 1)[0]
+        return {**saved, "markdown": f"{'!' if picture else ''}[{label}]({saved['link']})"}
+
     def rename_document(user: User, id: str, title: str):
         return _brief(ops.doc_rename(id, RenameIn(title=title), user=user))
 
@@ -207,12 +222,19 @@ def build_tools(ops: SimpleNamespace) -> dict[str, dict]:
         "append_to_page": tool(
             append_to_page, "Append to a page", "Add Markdown at the end of a page, after a blank line.",
             _schema({"id": _ID, "text": {"type": "string"}}, ("id", "text")), write=True),
+        "add_attachment": tool(
+            add_attachment, "Add a picture or attachment",
+            "Store a file in the page's own folder and get the Markdown that shows or links it. The page text is not "
+            "changed: put the returned markdown where it belongs with edit_page or append_to_page.",
+            _schema({"id": _ID, "name": {"type": "string", "description": "File name with extension, e.g. \"ventil.jpg\"."},
+                     "data_base64": {"type": "string", "description": "The file's bytes, base64-encoded."}},
+                    ("id", "name", "data_base64")), write=True),
         "rename_document": tool(
             rename_document, "Rename a document",
-            "Give a page or PDF a new title. A page's file name and picture folder follow; the id stays.",
+            "Give a page or PDF a new title. A page's file name and picture folder follow, links to it are corrected; the id stays.",
             _schema({"id": _ID, "title": {"type": "string"}}, ("id", "title")), write=True),
         "move_document": tool(
-            move_document, "Move a document", "Move a page or PDF into another folder and/or area. Links between pages are not rewritten.",
+            move_document, "Move a document", "Move a page or PDF into another folder and/or area. Links to it and its own links are corrected.",
             _schema({"id": _ID, "folder": _FOLDER, "area": _AREA}, ("id",)), write=True),
         "trash_document": tool(
             trash_document, "Move a document to the trash",

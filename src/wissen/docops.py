@@ -363,6 +363,20 @@ def purge_trash(archive: Path, days: int, today: date | None = None) -> int:
     return removed
 
 
+def purge_one(archive: Path, trash_path: str, allowed) -> None:
+    """Delete one document in the trash for good, with its pictures; ``allowed(area)`` checks rights."""
+    _writable(archive)
+    src, rel = _trash_source(archive, trash_path)
+    if not allowed(nfc(rel.parts[0])):
+        raise DocOpError("no write access")
+    assets = _assets(src) if src.suffix.lower() == ".md" else None
+    with _lock:
+        src.unlink()
+        if assets and assets.is_dir():
+            shutil.rmtree(assets)
+        _prune(src.parent, archive.resolve() / TRASH)
+
+
 def save_asset(archive: Path, doc: dict, name: str, data: bytes) -> str:
     """Store a picture or attachment in ``<Seite>.assets/``; returns the link to put into the page."""
     _writable(archive)

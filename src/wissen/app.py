@@ -24,7 +24,7 @@ from .apikeys import ApiKeyStore, KeyError_
 from .auth import (User, client_ip, cookie_name, current_user, is_external, is_https,
                    require_admin, session_token)
 from .config import Settings, load_settings
-from . import ask, docops
+from . import ask, docops, links
 from .docops import DocOpError
 from .index import Index, on_disk
 from .pages import head_block, new_id, read_head, set_head
@@ -962,6 +962,47 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         app.state.wake.set()
         return _doc_or_404(doc["id"], user)
 
+    def _relink(user: User, old: dict, new_rel: str) -> int:
+        """After a rename or move: correct the links that would now lead nowhere. Returns pages changed.
+
+        The document's own links are counted from its new folder, and every page that pointed at
+        it gets the new path. A page somebody else is editing right now is left alone.
+        """
+        archive, index = app.state.index.archive, app.state.index
+        writable = [a for a in allowed_areas(user) if user.can_write(a)]
+        who = user.display_name or user.name
+        changed = 0
+
+        def rewrite(rel: str, fn) -> None:
+            nonlocal changed
+            page = index.by_path(rel, writable)
+            if not page:
+                return
+            lock = app.state.locks.get(page["id"])
+            if lock and lock["holder"] != _holder(user):
+                return
+            try:
+                text = docops.read_page(archive, page)
+                new = fn(text)
+                if new == text:
+                    return
+                page_id = read_head(text, "").id
+                if page_id:
+                    app.state.versions.save(page_id, text, who)
+                docops.write_page(archive, page, new)
+            except (DocOpError, VersionError):
+                log.exception("links in %s could not be corrected", rel)
+                return
+            _changed(user, rel, page)
+            changed += 1
+
+        if old["ext"] == "md":
+            rewrite(new_rel, lambda text: links.rebase(text, old["path"], new_rel))
+        for rel in index.pages(writable):
+            if rel != new_rel:
+                rewrite(rel, lambda text, rel=rel: links.retarget(text, rel, old["path"], new_rel))
+        return changed
+
     def _save(doc: dict, user: User, text: str, old: str) -> dict:
         """Write ``text`` as the page; the text before goes to the versions. The id never changes."""
         keep, now = read_head(old, "").id, read_head(text, "").id
@@ -1041,11 +1082,13 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
                 app.state.versions.save(read_head(before, "").id, before, user.display_name or user.name)
         except (DocOpError, VersionError) as exc:
             raise _op(exc) from exc
-        return _changed(user, rel, doc)
+        result = _changed(user, rel, doc)
+        updated = _relink(user, doc, rel) if rel != doc["path"] else 0
+        return {**_doc_or_404(result["id"], user), "links_updated": updated}
 
     @app.post("/api/documents/{doc_id}/move", tags=["write"])
     def doc_move(doc_id: str, body: MoveIn, user: User = Depends(current_user)):
-        """Into another folder, or another area. Links between pages are not rewritten."""
+        """Into another folder, or another area. Links to it, and its own links, are corrected."""
         doc = _writable_doc(doc_id, user)
         _free(doc, user)
         area = body.area or doc["area"]
@@ -1055,7 +1098,9 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
             rel = docops.move(app.state.index.archive, doc, body.folder, area)
         except DocOpError as exc:
             raise _op(exc) from exc
-        return _changed(user, rel, doc)
+        result = _changed(user, rel, doc)
+        updated = _relink(user, doc, rel)
+        return {**_doc_or_404(result["id"], user), "links_updated": updated}
 
     @app.post("/api/documents/{doc_id}/trash", tags=["write"])
     def doc_trash(doc_id: str, user: User = Depends(current_user)):
@@ -1093,6 +1138,23 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
             raise _op(exc) from exc
         return _changed(user, rel)
 
+    @app.post("/api/trash/purge", tags=["write"])
+    def trash_purge(body: TrashRestoreIn, user: User = Depends(current_user)):
+        """Delete one document in the trash for good – this cannot be undone."""
+        try:
+            docops.purge_one(app.state.index.archive, body.trash_path, user.can_write)
+        except DocOpError as exc:
+            raise _op(exc) from exc
+        return {"ok": True}
+
+    def asset_save(doc_id: str, name: str, data: bytes, user: User) -> dict:
+        doc = _writable_doc(doc_id, user, page=True)
+        try:
+            link = docops.save_asset(app.state.index.archive, doc, name, data)
+        except DocOpError as exc:
+            raise HTTPException(status_code=413 if "too large" in str(exc) else 400, detail=str(exc)) from exc
+        return {"link": link, "size": len(data)}
+
     @app.post("/api/documents/{doc_id}/asset", tags=["write"], status_code=201)
     async def page_asset_upload(doc_id: str, request: Request,
                                 name: str = Query(..., max_length=200, description="file name, e.g. foto.jpg"),
@@ -1101,15 +1163,10 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
 
         It lands in ``<Seite>.assets/``; ``link`` is what goes into the page, e.g. ``![Foto](<link>)``.
         """
-        doc = _writable_doc(doc_id, user, page=True)
+        _writable_doc(doc_id, user, page=True)
         if int(request.headers.get("content-length") or 0) > docops.MAX_ASSET:
             raise HTTPException(status_code=413, detail="file too large")
-        data = await request.body()
-        try:
-            link = docops.save_asset(app.state.index.archive, doc, name, data)
-        except DocOpError as exc:
-            raise HTTPException(status_code=413 if "too large" in str(exc) else 400, detail=str(exc)) from exc
-        return {"link": link, "size": len(data)}
+        return asset_save(doc_id, name, await request.body(), user)
 
     @app.get("/api/documents/{doc_id}/lock", tags=["write"])
     def lock_state(doc_id: str, user: User = Depends(current_user)):
@@ -1294,7 +1351,7 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         areas=areas, tree=tree, documents=documents, document=document, document_by_path=document_by_path,
         document_text=document_text, page_content=page_content, page_save=page_save, page_create=page_create,
         doc_rename=doc_rename, doc_move=doc_move, doc_trash=doc_trash, trash_items=trash_items,
-        trash_restore=trash_restore, version_list=version_list, version_get=version_get,
+        trash_restore=trash_restore, version_list=version_list, version_get=version_get, asset_save=asset_save,
         version_restore=version_restore))
 
     @app.post("/api/ask", tags=["ai"])

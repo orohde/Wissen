@@ -65,7 +65,50 @@ function listItem(state) {
   return null;
 }
 
-// options: onChange() after every change of the text, onSelect({table, list}) when the cursor
+// What the cursor stands in – so the toolbar can show it: {bold: true, h2: true, …}
+function activeAt(state) {
+  const { schema, selection } = state;
+  const { $from, empty, from, to } = selection;
+  const marks = state.storedMarks || $from.marks();
+  const has = name => {
+    const type = schema.marks[name];
+    if (!type) return false;
+    return empty ? !!type.isInSet(marks) : state.doc.rangeHasMark(from, to, type);
+  };
+  const within = name => {
+    for (let depth = $from.depth; depth > 0; depth--) if ($from.node(depth).type.name === name) return $from.node(depth);
+    return null;
+  };
+  const block = $from.parent;
+  const level = block.type.name === 'heading' ? block.attrs.level : 0;
+  const item = within('list_item');
+  const task = !!item && item.attrs.checked != null;
+  return {
+    bold: has('strong'), italic: has('emphasis'), code: has('inlineCode'), strike: has('strike_through'), link: has('link'),
+    h1: level === 1, h2: level === 2, h3: level === 3,
+    bullets: !!within('bullet_list') && !task, numbers: !!within('ordered_list') && !task, task,
+    quote: !!within('blockquote'), codeblock: block.type.name === 'code_block',
+  };
+}
+
+// the link the cursor stands in: {start, end, mark}, or null
+function linkAt(state) {
+  const type = state.schema.marks.link;
+  const { $from } = state.selection;
+  const base = $from.start();
+  const runs = [];
+  $from.parent.forEach((child, offset) => {
+    const mark = type.isInSet(child.marks);
+    if (!mark) return;
+    const start = base + offset, end = start + child.nodeSize;
+    const last = runs[runs.length - 1];
+    if (last && last.end === start && last.mark.eq(mark)) last.end = end;      // bold inside a link: still one link
+    else runs.push({ start, end, mark });
+  });
+  return runs.find(run => $from.pos >= run.start && $from.pos <= run.end) || null;
+}
+
+// options: onChange() after every change of the text, onSelect({table, list, active}) when the cursor
 // moves, imageUrl(src) to show pictures that the page names relative to its own folder
 export async function create(root, markdown, options = {}) {
   const extras = $prose(() => new Plugin({
@@ -92,7 +135,7 @@ export async function create(root, markdown, options = {}) {
       update(view, before) {
         if (!view.state.doc.eq(before.doc) && options.onChange) options.onChange();
         if (options.onSelect && (!view.state.selection.eq(before.selection) || !view.state.doc.eq(before.doc))) {
-          options.onSelect({ table: isInTable(view.state), list: !!listItem(view.state) });
+          options.onSelect({ table: isInTable(view.state), list: !!listItem(view.state), active: activeAt(view.state) });
         }
       },
     }),
@@ -121,10 +164,25 @@ export async function create(root, markdown, options = {}) {
       else if (COMMANDS[name]) ctx.get(commandsCtx).call(COMMANDS[name][0].key, COMMANDS[name][1]);
       view.focus();
     },
-    // marked text becomes a link; with nothing marked the address itself is put in as one
+    // the address of the link the cursor stands in ('' outside a link)
+    linkHref() {
+      const found = linkAt(view.state);
+      return found ? found.mark.attrs.href || '' : '';
+    },
+    // In a link: give it this address, or take the link away with an empty one. Else: marked text
+    // becomes a link; with nothing marked the address itself is put in as one.
     link(href) {
-      if (!href) return;
       const { state } = view;
+      const found = linkAt(state);
+      if (found) {
+        const type = schema.marks.link;
+        let tr = state.tr.removeMark(found.start, found.end, type);
+        if (href) tr = tr.addMark(found.start, found.end, type.create({ ...found.mark.attrs, href }));
+        view.dispatch(tr);
+        view.focus();
+        return;
+      }
+      if (!href) return;
       if (state.selection.empty) {
         view.dispatch(state.tr.replaceSelectionWith(schema.text(href, [schema.marks.link.create({ href })]), false));
       } else ctx.get(commandsCtx).call(toggleLinkCommand.key, { href });

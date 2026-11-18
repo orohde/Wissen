@@ -26,7 +26,7 @@ Wissen! ist die Schwester von [Ordnung!](https://github.com/orohde/Ordnung) (Dok
 - **Sperre statt Durcheinander.** Wer eine Seite bearbeitet, hält sie; andere sehen, wer gerade schreibt. Die Sperre läuft von selbst ab, wenn der Editor zu ist.
 - **Startseite.** Wissen! öffnet mit dem, was du angepinnt hast, und dem zuletzt Geänderten. Jede Person pinnt für sich.
 - **Hinweiskästen, Aufgabenlisten, Tabellen, Bilder.** Bilder einer Seite liegen in einem Ordner gleich daneben (`<Seite>.assets/`) und lassen sich beim Schreiben einfügen oder hineinziehen.
-- **Neue Seite, Umbenennen, Verschieben, Papierkorb.** Gelöschtes bleibt 30 Tage im Papierkorb (einstellbar) und lässt sich zurückholen.
+- **Neue Seite, Umbenennen, Verschieben, Papierkorb.** Beim Umbenennen und Verschieben zieht Wissen! die Links nach, die auf das Dokument zeigen. Gelöschtes bleibt 30 Tage im Papierkorb (einstellbar) und lässt sich zurückholen.
 - **Bereiche und Rechte.** Ein Bereich ist ein Hauptordner, etwa je Thema, Haushalt oder Person. Rechte gibt es je Person und Bereich: kein Zugriff, lesen oder lesen und schreiben.
 - **Lesebreite und Schriftgröße** per Schieber, je Konto gemerkt. Hell und dunkel.
 - **REST-API und MCP.** Alles, was die Oberfläche kann, geht auch per API (ausprobierbar unter `/api/docs`). Für KI-Assistenten gibt es einen MCP-Endpunkt unter `/api/mcp`. Schlüssel legst du unter *Einstellungen → API* an, nur lesend oder lesend und schreibend.

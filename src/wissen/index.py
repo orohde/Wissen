@@ -664,6 +664,15 @@ class Index:
         doc["text"] = dict(text) if text else None
         return doc
 
+    def pages(self, areas: list[str]) -> list[str]:
+        """Paths of all Markdown pages in these areas."""
+        if not areas:
+            return []
+        marks = ",".join("?" * len(areas))
+        with self.connect() as con:
+            return [r[0] for r in con.execute(
+                f"SELECT path FROM files WHERE ext = 'md' AND area IN ({marks}) ORDER BY path", list(areas))]
+
     def by_path(self, path: str, areas: list[str]) -> dict | None:
         if not areas:
             return None

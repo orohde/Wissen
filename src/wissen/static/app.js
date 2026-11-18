@@ -89,9 +89,9 @@ const I18N = {
     "upd.notes": "Was ist neu",
     "upd.release": "Alle Änderungen ↗",
     "upd.close": "Schließen",
-    "upd.unraid": "Docker → Compose → Stack „Wissen“ → „Compose Up“, nachdem das neue Image gebaut ist.",
-    "upd.forgejo": "Normalerweise nichts zu tun: Nach jedem Push baut der Forgejo-Workflow das Image und startet Wissen! neu. Steht dieser Hinweis länger da, ist der Lauf hängen geblieben – in Forgejo unter „Actions“ nachsehen.",
-    "upd.compose": "im Ordner mit dem Quellcode",
+    "upd.unraid": "Reiter Docker, beim Container auf „update ready“ klicken und „Apply update“ wählen.",
+    "upd.syno": "Container Manager → Image → beim Image von Wissen! „Update verfügbar“ → Aktualisieren.",
+    "upd.compose": "im Ordner mit der compose.yml",
     "upd.card": "Neue Versionen",
     "upd.f.on": "Einmal am Tag nach neuen Versionen sehen",
     "upd.f.hint": "Wissen! fragt dafür bei version.worldgate.de nach. Übertragen werden nur App-Name, installierte Version und Installationsart (z. B. Docker) – keine Kennung, keine Dokumente, keine Namen. Dort werden nur Tagessummen gezählt. Dauerhaft abschalten lässt es sich auch mit VERSIONSPRUEFUNG=0.",
@@ -228,6 +228,16 @@ const I18N = {
     "trash.today": "wird heute geleert",
     "trash.view": "Ansehen",
     "trash.restore": "Zurückholen",
+    "trash.purge": "Endgültig löschen",
+    "trash.purge.q": "„{title}“ endgültig löschen?",
+    "trash.purge.hint": "Das lässt sich nicht rückgängig machen. Die Datei und ihre Bilder werden von der Platte gelöscht.",
+    "trash.purged": "„{title}“ ist endgültig gelöscht.",
+    "ln.updated": "{n} Links auf anderen Seiten angepasst.",
+    "ln.updated.one": "1 Link auf einer anderen Seite angepasst.",
+    "link.edit": "Link ändern",
+    "link.hint": "Leer lassen entfernt den Link, der Text bleibt.",
+    "link.save": "Übernehmen",
+    "pins.drag": "Ziehen ändert die Reihenfolge",
     "ver.menu": "Versionen …",
     "ver.title": "Versionen: {title}",
     "ver.none": "Von dieser Seite gibt es noch keine früheren Fassungen.",
@@ -566,9 +576,9 @@ const I18N = {
     "upd.notes": "What’s new",
     "upd.release": "All changes ↗",
     "upd.close": "Close",
-    "upd.unraid": "Docker → Compose → stack “Wissen” → “Compose Up”, once the new image is built.",
-    "upd.forgejo": "Usually nothing to do: after every push the Forgejo workflow builds the image and restarts Wissen!. If this notice stays, the run got stuck – look under “Actions” in Forgejo.",
-    "upd.compose": "in the folder with the source code",
+    "upd.unraid": "Docker tab, click “update ready” on the container and choose “Apply update”.",
+    "upd.syno": "Container Manager → Image → “Update available” on the Wissen! image → Update.",
+    "upd.compose": "in the folder with the compose.yml",
     "upd.card": "New versions",
     "upd.f.on": "Look for new versions once a day",
     "upd.f.hint": "Wissen! asks version.worldgate.de. Only the app name, the installed version and the kind of installation (e.g. Docker) are sent – no identifier, no documents, no names. Only daily totals are counted there. Switch it off for good with VERSIONSPRUEFUNG=0.",
@@ -705,6 +715,16 @@ const I18N = {
     "trash.today": "emptied today",
     "trash.view": "View",
     "trash.restore": "Put back",
+    "trash.purge": "Delete for good",
+    "trash.purge.q": "Delete “{title}” for good?",
+    "trash.purge.hint": "This cannot be undone. The file and its pictures are deleted from the disk.",
+    "trash.purged": "“{title}” is deleted for good.",
+    "ln.updated": "{n} links on other pages corrected.",
+    "ln.updated.one": "1 link on another page corrected.",
+    "link.edit": "Change link",
+    "link.hint": "Leave empty to remove the link; the text stays.",
+    "link.save": "Apply",
+    "pins.drag": "Drag to change the order",
     "ver.menu": "Versions …",
     "ver.title": "Versions: {title}",
     "ver.none": "There are no earlier versions of this page yet.",
@@ -2839,11 +2859,14 @@ async function newPage() {
   location.hash = '#/seite/' + doc.id;
 }
 
+const linksNote = done => (!done.links_updated ? ''
+  : ' ' + (done.links_updated === 1 ? t('ln.updated.one') : t('ln.updated', { n: done.links_updated })));
+
 async function renameDoc(doc) {
   const done = await ask({ title: t('rn.title'), ok: t('rn.ok'), fields: [{ key: 'title', label: t('new.title'), value: doc.title }],
     run: v => api(`documents/${doc.id}/rename`, { method: 'POST', body: JSON.stringify({ title: v.title }) }) });
   if (!done) return;
-  toast(esc(t('rn.done', { title: done.title })));
+  toast(esc(t('rn.done', { title: done.title }) + linksNote(done)));
   afterChange(done);
 }
 
@@ -2855,7 +2878,7 @@ async function moveDoc(doc) {
   const done = await ask({ title: `${t('mv.title')}: ${doc.title}`, ok: t('mv.ok'), fields,
     run: v => api(`documents/${doc.id}/move`, { method: 'POST', body: JSON.stringify({ folder: v.folder, area: v.area || doc.area }) }) });
   if (!done) return;
-  toast(esc(t('mv.done', { folder: [areaLabel(done.area), ...(done.folder ? done.folder.split('/') : [])].join(' › ') })));
+  toast(esc(t('mv.done', { folder: [areaLabel(done.area), ...(done.folder ? done.folder.split('/') : [])].join(' › ') }) + linksNote(done)));
   afterChange(done);
 }
 
@@ -2975,9 +2998,18 @@ async function loadTrash() {
       `<td class="fd-table__cell">${left === null ? '–' : esc(left <= 0 ? t('trash.today') : left === 1 ? t('trash.day') : t('trash.days', { n: left }))}</td>` +
       `<td class="fd-table__cell trash-actions">` +
         `<button type="button" class="fd-button fd-button--transparent" data-k="view">${esc(t('trash.view'))}</button>` +
-        ((State.me.write_areas || []).includes(item.area) ? `<button type="button" class="fd-button" data-k="restore">${esc(t('trash.restore'))}</button>` : '') +
+        ((State.me.write_areas || []).includes(item.area)
+          ? `<button type="button" class="fd-button" data-k="restore">${esc(t('trash.restore'))}</button>` +
+            `<button type="button" class="fd-button fd-button--transparent trash-purge" data-k="purge">${esc(t('trash.purge'))}</button>` : '') +
       `</td>`;
     tr.querySelector('[data-k=view]').addEventListener('click', () => viewTrashed(item));
+    tr.querySelector('[data-k=purge]')?.addEventListener('click', async () => {
+      const done = await ask({ title: t('trash.purge.q', { title: item.title }), text: t('trash.purge.hint'), ok: t('trash.purge'),
+        run: () => api('trash/purge', { method: 'POST', body: JSON.stringify({ trash_path: item.trash_path }) }) });
+      if (!done) return;
+      toast(esc(t('trash.purged', { title: item.title })));
+      loadTrash();
+    });
     tr.querySelector('[data-k=restore]')?.addEventListener('click', async () => {
       try {
         const back = await api('trash/restore', { method: 'POST', body: JSON.stringify({ trash_path: item.trash_path }) });
@@ -3084,7 +3116,44 @@ async function restoreVersion() {
   afterChange(doc);
 }
 
+// pinned cards can be dragged into another order; the order belongs to the account
+function initPinDrag() {
+  const box = $('start-pins');
+  let dragged = null;
+  const order = () => [...box.querySelectorAll('.start-card')].map(c => c.dataset.id);
+  let before = '';
+  box.addEventListener('dragstart', ev => {
+    dragged = ev.target.closest('.start-card');
+    if (!dragged) return;
+    before = order().join(',');
+    dragged.classList.add('is-dragging');
+    ev.dataTransfer.effectAllowed = 'move';
+    ev.dataTransfer.setData('text/plain', dragged.dataset.id);
+  });
+  box.addEventListener('dragover', ev => {
+    if (!dragged) return;
+    ev.preventDefault();
+    const over = ev.target.closest('.start-card');
+    if (!over || over === dragged) return;
+    const r = over.getBoundingClientRect();
+    // cards stand in rows: past the middle of the card under the pointer means "behind it"
+    const after = ev.clientY > r.bottom ? true : ev.clientY < r.top ? false : ev.clientX > r.left + r.width / 2;
+    box.insertBefore(dragged, after ? over.nextSibling : over);
+  });
+  box.addEventListener('drop', ev => { if (dragged) ev.preventDefault(); });
+  box.addEventListener('dragend', async () => {
+    if (!dragged) return;
+    dragged.classList.remove('is-dragging');
+    dragged = null;
+    const ids = order();
+    if (ids.join(',') === before) return;
+    try { State.pins = (await api('me/pins', { method: 'PUT', body: JSON.stringify({ ids }) })).items; }
+    catch (e) { toast(esc(errText(e))); loadStart(); }
+  });
+}
+
 function initVersions() {
+  initPinDrag();
   $('ver-close').addEventListener('click', () => $('ver-dlg').close());
   $('ver-mode-diff').addEventListener('click', () => { Ver.mode = 'diff'; if (Ver.loaded) paintVersion(); });
   $('ver-mode-text').addEventListener('click', () => { Ver.mode = 'text'; if (Ver.loaded) paintVersion(); });
@@ -3151,7 +3220,14 @@ async function openRich() {
     const doc = Edit.doc;
     Edit.rich = await WissenEditor.create($('ed-rich-page'), text, {
       onChange: () => { if (!Edit.richChanged) { Edit.richChanged = true; paintEdit(); } },
-      onSelect: where => { $('ed-table-tools').hidden = !where.table; },
+      onSelect: where => {
+        $('ed-table-tools').hidden = !where.table;
+        document.querySelectorAll('#ed-tools .ed-tool').forEach(b => {
+          const on = !!where.active[b.dataset.tool];
+          b.classList.toggle('is-active', on);
+          if (b.dataset.tool in where.active) b.setAttribute('aria-pressed', on);
+        });
+      },
       imageUrl: src => (isExternal(src) ? src : assetUrl(doc, src)),
     });
   } catch (e) {
@@ -3379,8 +3455,10 @@ function initEdit() {
     if (!tool || !Edit.rich) return;
     if (tool === 'image') { $('ed-file').click(); return; }
     if (tool === 'link') {
-      const v = await ask({ title: t('link.title'), ok: t('link.ok'), fields: [{ key: 'url', label: t('link.url'), placeholder: 'https://' }] });
-      if (v && v.url && Edit.rich) Edit.rich.link(v.url);
+      const current = Edit.rich.linkHref();          // in a link: change or remove it
+      const v = await ask({ title: t(current ? 'link.edit' : 'link.title'), text: current ? t('link.hint') : '',
+        ok: t(current ? 'link.save' : 'link.ok'), fields: [{ key: 'url', label: t('link.url'), value: current, placeholder: 'https://' }] });
+      if (v && Edit.rich && (v.url || current)) Edit.rich.link(v.url);
       return;
     }
     if (tool === 'task') Edit.rich.task(); else Edit.rich.run(tool);
@@ -3481,7 +3559,13 @@ async function loadStart() {
   State.pins = pins.items;
   const box = $('start-pins');
   box.innerHTML = '';
-  State.pins.forEach(doc => box.appendChild(startCard(doc, false)));
+  State.pins.forEach(doc => {
+    const card = startCard(doc, false);
+    card.draggable = State.pins.length > 1;
+    card.dataset.id = doc.id;
+    if (card.draggable) card.title = t('pins.drag');
+    box.appendChild(card);
+  });
   $('start-nopins').hidden = State.pins.length > 0;
   const list = $('start-recent');
   list.innerHTML = '';
