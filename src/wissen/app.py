@@ -17,6 +17,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
 from .ai import AIError, AIService
@@ -265,7 +266,7 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         title="Wissen!",
         version=__version__,
         description=("Folder-based archive for your own documentation and manuals: Markdown pages and PDFs "
-                     "side by side. Sign in with the browser, or send the API key from *Settings → API* as "
+                     "side by side. Sign in with the browser, or send the API key from *Settings → Connections* as "
                      "`Authorization: Bearer <key>`."),
         lifespan=lifespan,
         docs_url="/api/docs",
@@ -284,7 +285,7 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
     app.state.networks = Networks(app.state.security.load().internal_networks or settings.internal_networks)
     app.state.apikeys = ApiKeyStore(settings.data / "apikeys.json")
     if app.state.security.import_api_token(settings.api_token):
-        log.info("API key taken over from WISSEN_API_TOKEN; manage it under Settings → API from now on")
+        log.info("API key taken over from WISSEN_API_TOKEN; manage it under Settings → Connections from now on")
     # the single key from before becomes a named one; the settings file forgets it
     old = app.state.security.load().api_token
     if old:
@@ -1411,5 +1412,10 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
             response.headers["Cache-Control"] = "no-cache"
         return response
 
+    # Outermost layer: the client address and scheme come from X-Forwarded-For/-Proto only when the
+    # connection itself comes from a trusted proxy, and then from the rightmost entry that is not one
+    # of them. Trusting everybody would let anyone on the internet claim a home address.
+    app.add_middleware(ProxyHeadersMiddleware,
+                       trusted_hosts=settings.trusted_proxies or ", ".join(DEFAULT_INTERNAL))
     app.mount("/", StaticFiles(directory=STATIC, html=True), name="ui")
     return app

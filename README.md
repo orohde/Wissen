@@ -31,7 +31,7 @@ Wissen! is the sister of [Ordnung!](https://github.com/orohde/Ordnung) (document
 - **New page, rename, move, trash.** When a document is renamed or moved, Wissen! corrects the links that point at it. Deleted documents stay in the trash for 30 days (adjustable) and can be put back.
 - **Areas and rights.** An area is a top folder, for instance per topic, household or person. Rights are set per person and area: no access, read, or read and write.
 - **Reading width and text size** by slider, remembered per account. Light and dark.
-- **REST API and MCP.** Everything the interface can do works over the API as well (try it under `/api/docs`). For AI assistants there is an MCP endpoint at `/api/mcp`. Keys are made under *Settings → API*, read-only or read and write.
+- **REST API and MCP.** Everything the interface can do works over the API as well (try it under `/api/docs`). For AI assistants there is an MCP endpoint at `/api/mcp`. Keys are made under *Settings → Connections*, read-only or read and write.
 - **Second factor** for signing in, mandatory for access from outside if you like.
 
 <table>
@@ -73,27 +73,28 @@ Settings are made in the app. The compose file only holds folders, the port and,
 | `PUID` / `PGID` / `UMASK` | `99` / `100` / `0002` | User, group and umask the app runs as when the container starts as root (no effect with `--user`) |
 | `TZ` | `UTC` | Time zone, e.g. `Europe/Berlin` |
 | `VERSIONSPRUEFUNG` | on | `0` switches the daily check for new versions off for good (see below) |
+| `WISSEN_TRUSTED_PROXIES` | private ranges | Which addresses may report the client address via `X-Forwarded-For`, comma-separated (IP or network, e.g. `10.10.20.50`). Best set to your reverse proxy's address |
 
 These variables only preset a fresh installation; once something is saved in the app, the app counts:
 
 | Variable | in the app under |
 |---|---|
 | `WISSEN_ADMIN_USER` / `WISSEN_ADMIN_PASSWORD` | Setup page on the first visit (the variables create the account only while there is none) |
-| `WISSEN_API_TOKEN` | *Settings → API* (taken over once) |
+| `WISSEN_API_TOKEN` | *Settings → Connections* (taken over once) |
 | `WISSEN_OCR`, `WISSEN_OCR_LANG`, `WISSEN_OCR_MAX_PAGES`, `WISSEN_RESCAN_MINUTES`, `WISSEN_TEXT_WORKERS` | *Settings → System* |
 | `WISSEN_INTERNAL_NETWORKS` | *Settings → Security → Home network* |
 
 ### New versions
 
-Once a day Wissen! asks `version.worldgate.de` whether there is a new version. If there is, administrators see a button at the top with instructions for updating. Only the name of the app, the installed version and the kind of installation (e.g. Docker) are sent – no identifier, no documents, no names. Only daily totals are stored there, no IP addresses. Switch it off under *Settings → System*, or for good with `VERSIONSPRUEFUNG=0`.
+Once a day Wissen! asks `version.worldgate.de` whether there is a new version. If there is, administrators see a button at the top with instructions for updating. Only the name of the app, the installed version and the kind of installation (e.g. Docker) are sent – no identifier, no documents, no names. Only daily totals are stored there, no IP addresses. Switch it off under *Settings → About*, or for good with `VERSIONSPRUEFUNG=0`.
 
 ### Signing in from outside
 
-Behind a reverse proxy that **overwrites** `X-Forwarded-For` (Caddy does so by itself), Wissen! can tell whether a sign-in comes from the home network or from outside. Under *Settings → Security* access from outside can be limited to accounts with a second factor (authenticator app, plus ten one-time recovery codes). Sign-ins from outside, locked accounts and changes to the second factor can be reported through [ntfy](https://ntfy.sh).
+Wissen! can tell whether a sign-in comes from the home network or from outside, also behind a reverse proxy. `X-Forwarded-For` only counts when the connection comes from a trusted proxy (`WISSEN_TRUSTED_PROXIES`, otherwise any address from a private range), and then the rightmost entry the visitor did not write themselves. Under *Settings → Security* access from outside can be limited to accounts with a second factor (authenticator app, plus ten one-time recovery codes). Sign-ins from outside, locked accounts and changes to the second factor can be reported through [ntfy](https://ntfy.sh).
 
 ### For AI assistants (MCP)
 
-MCP access is off in a fresh installation; an administrator switches it on under *Settings → AI*. The endpoint `/api/mcp` speaks the Model Context Protocol (streamable HTTP) and takes the same key as the REST API as `Authorization: Bearer <key>`. The tools: list areas and folders, search, read, create a page, replace it, replace a passage, append, rename, move, trash and versions. Rights, the editing lock, versions and the trash apply as in the interface; a read-only key is offered no writing tool.
+MCP access is off in a fresh installation; an administrator switches it on under *Settings → Connections*. The endpoint `/api/mcp` speaks the Model Context Protocol (streamable HTTP) and takes the same key as the REST API as `Authorization: Bearer <key>`. The tools: list areas and folders, search, read, create a page, replace it, replace a passage, append, rename, move, trash and versions. Rights, the editing lock, versions and the trash apply as in the interface; a read-only key is offered no writing tool.
 
 ## How things are stored
 

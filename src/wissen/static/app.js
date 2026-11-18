@@ -60,6 +60,26 @@ const I18N = {
     "st.trash.hint": "Gelöschte Dokumente liegen im Papierkorb (.papierkorb im Archiv). Nach dieser Frist löscht Wissen! sie einmal am Tag endgültig. 0 heißt: nie.",
     "acc.lang": "Sprache",
     "acc.lang.hint": "Gilt für dieses Konto auf allen Geräten.",
+    "set.general": "Allgemein",
+    "set.connections": "Verbindungen",
+    "set.about": "Über",
+    "gen.theme": "Farbschema",
+    "gen.theme.system": "Auto (wie das System)",
+    "gen.theme.light": "Hell",
+    "gen.theme.dark": "Dunkel",
+    "gen.theme.hint": "Gilt für diesen Browser. Der Knopf oben in der Leiste schaltet ebenfalls um.",
+    "acc.pw": "Passwort",
+    "acc.new.hint": "Mindestens zwölf Zeichen. Andere Geräte werden danach abgemeldet.",
+    "st.archive.q": "Archivordner auf {path} umstellen? Wissen! liest danach diesen Ordner ein.",
+    "usr.resettotp.label": "Zweiten Faktor zurücksetzen",
+    "usr.resettotp.hint": "Wenn das Telefon verloren ist. Das Konto richtet ihn danach neu ein.",
+    "ai.mcp.moved": "Den Zugang für KI-Assistenten (MCP) findest du unter",
+    "sec.nets.label": "Adressbereiche",
+    "about.license": "Lizenz",
+    "about.license.hint": "Freie Software: Du darfst Wissen! nutzen, ändern und weitergeben. Wer eine geänderte Fassung für andere betreibt, muss deren Quelltext offenlegen.",
+    "about.links": "Mehr dazu",
+    "about.manual": "Anleitung",
+    "about.source": "Quelltext",
     "tree.all": "Alle Ordner",
     "tree.root": "Hauptordner",
     "tree.expand": "Alle aufklappen",
@@ -288,7 +308,7 @@ const I18N = {
     "mcp.hint": "Über diesen Zugang kann ein KI-Assistent wie Claude in Wissen! suchen, lesen und – mit einem Schlüssel, der schreiben darf – Seiten anlegen und ändern. Rechte, Sperre, Versionen und Papierkorb gelten dabei wie in der Oberfläche.",
     "mcp.on": "MCP-Zugang einschalten",
     "mcp.url": "Adresse",
-    "mcp.keys": "Der Assistent meldet sich mit einem API-Schlüssel an. Schlüssel legst du unter Einstellungen → API an, nur lesend oder lesend und schreibend.",
+    "mcp.keys": "Der Assistent meldet sich mit einem API-Schlüssel an. Schlüssel legst du oben unter „API-Schlüssel“ an, nur lesend oder lesend und schreibend.",
     "mcp.keys.link": "Zu den API-Schlüsseln",
     "mcp.saved.on": "Der MCP-Zugang ist eingeschaltet.",
     "mcp.saved.off": "Der MCP-Zugang ist ausgeschaltet.",
@@ -554,6 +574,26 @@ const I18N = {
     "st.trash.hint": "Deleted documents go to the trash (.papierkorb in the archive). After this period Wissen! deletes them for good, once a day. 0 means never.",
     "acc.lang": "Language",
     "acc.lang.hint": "For this account, on all devices.",
+    "set.general": "General",
+    "set.connections": "Connections",
+    "set.about": "About",
+    "gen.theme": "Colour scheme",
+    "gen.theme.system": "Auto (like the system)",
+    "gen.theme.light": "Light",
+    "gen.theme.dark": "Dark",
+    "gen.theme.hint": "For this browser. The button in the top bar switches it too.",
+    "acc.pw": "Password",
+    "acc.new.hint": "At least twelve characters. Other devices are signed out afterwards.",
+    "st.archive.q": "Switch the archive folder to {path}? Wissen! then reads that folder.",
+    "usr.resettotp.label": "Reset second factor",
+    "usr.resettotp.hint": "When the phone is lost. The account sets it up again afterwards.",
+    "ai.mcp.moved": "Access for AI assistants (MCP) is under",
+    "sec.nets.label": "Address ranges",
+    "about.license": "Licence",
+    "about.license.hint": "Free software: you may use, change and pass on Wissen!. Whoever runs a changed version for others must publish its source code.",
+    "about.links": "More",
+    "about.manual": "Manual",
+    "about.source": "Source code",
     "tree.all": "All folders",
     "tree.root": "Main folder",
     "tree.expand": "Expand all",
@@ -782,7 +822,7 @@ const I18N = {
     "mcp.hint": "Through this access an AI assistant such as Claude can search and read in Wissen! and – with a key that may write – create and change pages. Rights, the editing lock, versions and the trash apply as in the interface.",
     "mcp.on": "Switch MCP access on",
     "mcp.url": "Address",
-    "mcp.keys": "The assistant signs in with an API key. Keys are made under Settings → API, read-only or read and write.",
+    "mcp.keys": "The assistant signs in with an API key. Create keys above under “API keys”, read-only or read and write.",
     "mcp.keys.link": "To the API keys",
     "mcp.saved.on": "MCP access is on.",
     "mcp.saved.off": "MCP access is off.",
@@ -1584,8 +1624,9 @@ async function loadStatus() {
 
 // -------------------------------------------------------------- settings
 
-const PANES = { konto: 'account', benutzer: 'users', ablage: 'storage', ki: 'ai', sicherheit: 'security', api: 'api', system: 'system' };
-const ADMIN_PANES = new Set(['users', 'storage', 'ai', 'security', 'api', 'system']);
+const PANES = { allgemein: 'general', konto: 'account', benutzer: 'users', ablage: 'storage', ki: 'ai', sicherheit: 'security',
+  verbindungen: 'connections', api: 'connections', system: 'system', ueber: 'about' };
+const ADMIN_PANES = new Set(['users', 'storage', 'ai', 'security', 'connections', 'system']);
 
 function route() {
   if (!State.me) return;
@@ -1610,8 +1651,8 @@ function route() {
   if (start) { loadStart(); return; }
   if (trash) { loadTrash(); return; }
   if (!inSettings) return;
-  let pane = PANES[m && m[1]] || 'account';
-  if (ADMIN_PANES.has(pane) && !State.me.is_admin) pane = 'account';
+  let pane = PANES[m && m[1]] || 'general';
+  if (ADMIN_PANES.has(pane) && !State.me.is_admin) pane = 'general';
   $('acc-who').textContent = t('acc.who', { name: State.me.display_name || State.me.name });
   showPane(pane);
 }
@@ -1623,10 +1664,53 @@ function showPane(pane) {
   if (pane === 'users') loadUsers();
   if (pane === 'account') loadAccountSecurity();
   if (pane === 'security') loadSecurity();
-  if (pane === 'api') loadApiKey();
-  if (pane === 'ai') { loadMcp(); loadAI(); }
+  if (pane === 'general') $('set-theme').value = theme;
+  if (pane === 'connections') { loadApiKey(); loadMcp(); }
+  if (pane === 'ai') loadAI();
+  if (pane === 'about') loadAbout();
   if (pane === 'storage') loadStorage();
   if (pane === 'system') loadSystem();
+  syncNeeds();
+}
+
+// ---- settings that save themselves (like CutStock): a change saves the whole form; text fields
+// fire "change" only when they are left, so nothing half-typed goes out. Buttons stay for actions.
+function initAutosave() {
+  document.querySelectorAll('form[data-autosave]').forEach(form => {
+    // several changes in quick succession (a picked folder, a ticked box) go out as one save
+    const run = debounce(() => form.requestSubmit(), 250);
+    form.addEventListener('change', ev => {
+      const el = ev.target;
+      if (el.closest('[data-nosave]') || el.hasAttribute('data-nosave')) return;
+      syncNeeds();
+      const q = el.dataset.confirm;
+      if (q && el.value.trim() !== (el.dataset.saved ?? el.defaultValue) && !confirm(t(q, { path: el.value.trim() || '–' }))) {
+        el.value = el.dataset.saved ?? el.defaultValue;
+        return;
+      }
+      if (q) el.dataset.saved = el.value.trim();
+      run();
+    });
+    // Enter in a text field saves as well, but must not submit twice
+    form.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' && ev.target.matches('input:not([type=checkbox])')) { ev.preventDefault(); ev.target.blur(); }
+    });
+  });
+}
+
+// rows that depend on a switch are greyed out while it is off
+function syncNeeds() {
+  document.querySelectorAll('#settings [data-needs]').forEach(row => {
+    const sw = $(row.dataset.needs);
+    row.classList.toggle('is-disabled', !!sw && !sw.checked);
+  });
+}
+
+async function loadAbout() {
+  const s = await api('status');
+  $('about-version').textContent = s.version;
+  $('about-manual').href = LANG === 'de' ? 'https://worldgate.de/wissen/handbuch/' : 'https://worldgate.de/en/wissen-en/manual/';
+  if (State.me.is_admin) showUpdateCard(await loadUpdate());
 }
 
 function setMsg(el, text, ok) {
@@ -1988,7 +2072,6 @@ async function loadSystem() {
   $('sys-info').innerHTML = rows.map(([k, v]) => `<dt>${esc(t(k))}</dt><dd>${esc(v)}</dd>`).join('');
   loadTextErrors();
   if (State.me.is_admin) showSystemSettings(await api('system/settings'));
-  if (State.me.is_admin) showUpdateCard(await loadUpdate());
 }
 
 // --------------------------------------------------------------- update check (version.worldgate.de)
@@ -2060,7 +2143,7 @@ function showSystemSettings(c) {
   $('sys-workers').value = c.text_workers;
   $('sys-lang-hint').textContent = c.languages.length ? t('sys.f.langs', { list: c.languages.join(', ') }) : t('sys.f.nolangs');
   $('sys-workers-hint').textContent = t('sys.f.cpus', { n: c.cpus });
-  $('sys-defaults').onclick = () => showSystemSettings({ ...c, ...c.defaults });
+  $('sys-defaults').onclick = () => { showSystemSettings({ ...c, ...c.defaults }); $('sys-form').requestSubmit(); };
 }
 
 async function saveSystemSettings(ev) {
@@ -2106,7 +2189,7 @@ function statusHtml(s, files) {
 
 async function loadStorage() {
   storage = await api('storage');
-  $('st-archive').value = storage.archive_path;
+  $('st-archive').value = $('st-archive').dataset.saved = storage.archive_path;
   $('st-archive-status').innerHTML = statusHtml(storage.archive);
   $('st-trash-days').value = storage.trash_days ?? 30;
   $('st-msg').textContent = '';
@@ -2193,6 +2276,7 @@ async function showPicker(inputId) {
     picker.querySelector('[data-choose]')?.addEventListener('click', ev => {
       input.value = ev.currentTarget.dataset.choose;
       picker.hidden = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
     });
   };
   render(input.value.trim());
@@ -2349,9 +2433,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(theme);
   initLayout();
 
+  $('set-theme').addEventListener('change', () => {
+    theme = $('set-theme').value;
+    store.set('theme', theme);
+    applyTheme(theme);
+  });
   $('btn-theme').addEventListener('click', () => {
     theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
     store.set('theme', theme);
+    $('set-theme').value = theme;
     applyTheme(theme);
   });
 
@@ -2506,6 +2596,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   initAccountSecurity();
   initSecurity();
+  initAutosave();
   initApiKey();
   initPage();
   $('st-area-add').addEventListener('click', async () => {

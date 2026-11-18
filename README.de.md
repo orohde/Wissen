@@ -29,7 +29,7 @@ Wissen! ist die Schwester von [Ordnung!](https://github.com/orohde/Ordnung) (Dok
 - **Neue Seite, Umbenennen, Verschieben, Papierkorb.** Beim Umbenennen und Verschieben zieht Wissen! die Links nach, die auf das Dokument zeigen. Gelöschtes bleibt 30 Tage im Papierkorb (einstellbar) und lässt sich zurückholen.
 - **Bereiche und Rechte.** Ein Bereich ist ein Hauptordner, etwa je Thema, Haushalt oder Person. Rechte gibt es je Person und Bereich: kein Zugriff, lesen oder lesen und schreiben.
 - **Lesebreite und Schriftgröße** per Schieber, je Konto gemerkt. Hell und dunkel.
-- **REST-API und MCP.** Alles, was die Oberfläche kann, geht auch per API (ausprobierbar unter `/api/docs`). Für KI-Assistenten gibt es einen MCP-Endpunkt unter `/api/mcp`. Schlüssel legst du unter *Einstellungen → API* an, nur lesend oder lesend und schreibend.
+- **REST-API und MCP.** Alles, was die Oberfläche kann, geht auch per API (ausprobierbar unter `/api/docs`). Für KI-Assistenten gibt es einen MCP-Endpunkt unter `/api/mcp`. Schlüssel legst du unter *Einstellungen → Verbindungen* an, nur lesend oder lesend und schreibend.
 - **Zweiter Faktor** für die Anmeldung, auf Wunsch Pflicht für den Zugang von außen.
 
 <table>
@@ -71,27 +71,28 @@ Eingestellt wird in der App. In die Compose-Datei gehören nur Ordner, Port und,
 | `PUID` / `PGID` / `UMASK` | `99` / `100` / `0002` | Benutzer, Gruppe und umask, als die die App läuft, wenn der Container als root startet (bei `--user` ohne Wirkung) |
 | `TZ` | `UTC` | Zeitzone, z. B. `Europe/Berlin` |
 | `VERSIONSPRUEFUNG` | an | `0` schaltet die tägliche Frage nach neuen Versionen dauerhaft ab (siehe unten) |
+| `WISSEN_TRUSTED_PROXIES` | private Netze | Von welchen Adressen `X-Forwarded-For` geglaubt wird, durch Komma getrennt (IP oder Netz, z. B. `10.10.20.50`). Am besten die Adresse des Reverse Proxys eintragen |
 
 Diese Variablen gelten nur als Vorgabe für eine frische Installation; sobald in der App etwas gespeichert ist, zählt die App:
 
 | Variable | in der App unter |
 |---|---|
 | `WISSEN_ADMIN_USER` / `WISSEN_ADMIN_PASSWORD` | Einrichtungsseite beim ersten Aufruf (die Variablen legen das Konto nur an, solange es keins gibt) |
-| `WISSEN_API_TOKEN` | *Einstellungen → API* (wird einmal übernommen) |
+| `WISSEN_API_TOKEN` | *Einstellungen → Verbindungen* (wird einmal übernommen) |
 | `WISSEN_OCR`, `WISSEN_OCR_LANG`, `WISSEN_OCR_MAX_PAGES`, `WISSEN_RESCAN_MINUTES`, `WISSEN_TEXT_WORKERS` | *Einstellungen → System* |
 | `WISSEN_INTERNAL_NETWORKS` | *Einstellungen → Sicherheit → Heimnetz* |
 
 ### Neue Versionen
 
-Einmal am Tag fragt Wissen! bei `version.worldgate.de`, ob es eine neue Version gibt. Gibt es eine, sehen Admins oben einen Knopf mit Anleitung zum Aktualisieren. Übertragen werden dabei nur der Name der App, die installierte Version und die Installationsart (z. B. Docker), keine Kennung, keine Dokumente und keine Namen. Gespeichert werden dort nur Tagessummen, keine IP-Adressen. Abschalten lässt sich das unter *Einstellungen → System* oder dauerhaft mit `VERSIONSPRUEFUNG=0`.
+Einmal am Tag fragt Wissen! bei `version.worldgate.de`, ob es eine neue Version gibt. Gibt es eine, sehen Admins oben einen Knopf mit Anleitung zum Aktualisieren. Übertragen werden dabei nur der Name der App, die installierte Version und die Installationsart (z. B. Docker), keine Kennung, keine Dokumente und keine Namen. Gespeichert werden dort nur Tagessummen, keine IP-Adressen. Abschalten lässt sich das unter *Einstellungen → Über* oder dauerhaft mit `VERSIONSPRUEFUNG=0`.
 
 ### Anmeldung von außen
 
-Hinter einem Reverse Proxy, der `X-Forwarded-For` **überschreibt** (Caddy tut das von sich aus), erkennt Wissen!, ob eine Anmeldung aus dem Heimnetz oder von außen kommt. Unter *Einstellungen → Sicherheit* lässt sich der Zugang von außen auf Konten mit zweitem Faktor beschränken (Authenticator-App, dazu zehn einmalige Wiederherstellungscodes). Anmeldungen von außen, gesperrte Konten und Änderungen am zweiten Faktor meldet Wissen! auf Wunsch über [ntfy](https://ntfy.sh).
+Wissen! erkennt, ob eine Anmeldung aus dem Heimnetz oder von außen kommt, auch hinter einem Reverse Proxy. `X-Forwarded-For` zählt dabei nur, wenn die Verbindung von einem vertrauenswürdigen Proxy kommt (`WISSEN_TRUSTED_PROXIES`, sonst jede Adresse aus einem privaten Netz), und dann der rechte Eintrag, den nicht der Besucher selbst geschrieben hat. Unter *Einstellungen → Sicherheit* lässt sich der Zugang von außen auf Konten mit zweitem Faktor beschränken (Authenticator-App, dazu zehn einmalige Wiederherstellungscodes). Anmeldungen von außen, gesperrte Konten und Änderungen am zweiten Faktor meldet Wissen! auf Wunsch über [ntfy](https://ntfy.sh).
 
 ### Für KI-Assistenten (MCP)
 
-Der MCP-Zugang ist bei einer frischen Installation aus; ein Administrator schaltet ihn unter *Einstellungen → KI* ein. Der Endpunkt `/api/mcp` spricht das Model Context Protocol (Streamable HTTP) und nimmt denselben Schlüssel wie die REST-API als `Authorization: Bearer <Schlüssel>`. Die Werkzeuge: Bereiche und Ordner auflisten, suchen, lesen, Seite anlegen, ganz ersetzen, eine Textstelle ersetzen, anhängen, umbenennen, verschieben, Papierkorb und Versionen. Rechte, Sperre, Versionen und Papierkorb gelten dabei wie in der Oberfläche; ein Schlüssel mit Leserecht bekommt keine schreibenden Werkzeuge angeboten.
+Der MCP-Zugang ist bei einer frischen Installation aus; ein Administrator schaltet ihn unter *Einstellungen → Verbindungen* ein. Der Endpunkt `/api/mcp` spricht das Model Context Protocol (Streamable HTTP) und nimmt denselben Schlüssel wie die REST-API als `Authorization: Bearer <Schlüssel>`. Die Werkzeuge: Bereiche und Ordner auflisten, suchen, lesen, Seite anlegen, ganz ersetzen, eine Textstelle ersetzen, anhängen, umbenennen, verschieben, Papierkorb und Versionen. Rechte, Sperre, Versionen und Papierkorb gelten dabei wie in der Oberfläche; ein Schlüssel mit Leserecht bekommt keine schreibenden Werkzeuge angeboten.
 
 ## Wie gespeichert wird
 

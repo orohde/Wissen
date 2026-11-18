@@ -30,6 +30,7 @@ class Settings:
     ocr_max_pages: int = 30
     text_workers: int = 1
     internal_networks: str = ""   # comma-separated CIDR ranges that count as "at home"; empty = private ranges
+    trusted_proxies: str = ""     # who may tell the client address (X-Forwarded-For); empty = private ranges
 
     @property
     def db_path(self) -> Path:
@@ -71,5 +72,6 @@ def load_settings() -> Settings:
         ocr_lang=os.environ.get("WISSEN_OCR_LANG", "deu+eng"),
         ocr_max_pages=int(os.environ.get("WISSEN_OCR_MAX_PAGES", "30")),
         internal_networks=os.environ.get("WISSEN_INTERNAL_NETWORKS", ""),
+        trusted_proxies=os.environ.get("WISSEN_TRUSTED_PROXIES", ""),
         text_workers=int(os.environ.get("WISSEN_TEXT_WORKERS", str(max(1, min(4, (os.cpu_count() or 2) // 3))))),
     )
