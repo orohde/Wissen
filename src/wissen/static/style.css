@@ -639,6 +639,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   background: var(--sapList_HeaderBackground, #eef1f4); }
 .md pre { padding: 0.8em 1em; overflow: auto; border-radius: 0.375rem; background: var(--sapList_HeaderBackground, #eef1f4); }
 .md pre code { padding: 0; background: none; font-size: 0.907em; }
+.md .chart { margin: 0 0 0.9em; overflow-x: auto; min-height: 2rem; }
+.md .chart svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.md .chart--zoom { cursor: zoom-in; }
+.md .chart--full { cursor: zoom-out; }
+.md .chart--full svg { margin: 0; }
+.md .chart__note { margin: 0 0 0.4em; font-size: 0.875em; color: var(--sapNegativeTextColor, #aa0808); }
 .md table { border-collapse: collapse; display: block; overflow-x: auto; }
 .md th, .md td { border: 1px solid var(--sapList_BorderColor, #d9d9d9); padding: 0.35em 0.7em; text-align: left; vertical-align: top; }
 .md th { background: var(--sapList_HeaderBackground, #eef1f4); }

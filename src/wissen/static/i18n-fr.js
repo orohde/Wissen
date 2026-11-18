@@ -373,6 +373,8 @@ I18N.fr = {
   "ed.saved": "Enregistré",
   "ed.saving": "Enregistrement …",
   "ed.discard": "Abandonner les modifications non enregistrées ?",
+  "page.chartError": "Le diagramme ne peut pas être dessiné – voici son texte.",
+  "page.chartZoom": "Toucher : taille réelle, ou de nouveau ajusté à la largeur",
   "ed.lost": "Le verrou est passé à {by}. Copiez votre texte avant de quitter la page.",
   "ed.upload": "Envoi de {name} …",
   "ed.menu": "Plus",

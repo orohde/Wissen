@@ -373,6 +373,8 @@ I18N.it = {
   "ed.saved": "Salvato",
   "ed.saving": "Salvataggio …",
   "ed.discard": "Scartare le modifiche non salvate?",
+  "page.chartError": "Il diagramma non può essere disegnato – ecco il suo testo.",
+  "page.chartZoom": "Tocca: dimensione reale, o di nuovo adattato alla larghezza",
   "ed.lost": "Il blocco è passato a {by}. Copia il testo prima di lasciare la pagina.",
   "ed.upload": "Caricamento di {name} …",
   "ed.menu": "Altro",

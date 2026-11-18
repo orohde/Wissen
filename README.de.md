@@ -124,7 +124,7 @@ python -m venv .venv && .venv/bin/pip install -e '.[dev]'
 WISSEN_ARCHIVE=./wissen WISSEN_DATA=./data WISSEN_ADMIN_PASSWORD=test-passwort-1 .venv/bin/python -m wissen
 ```
 
-Python · FastAPI · SQLite FTS5 · pypdfium2 · Tesseract · PDF.js · marked · DOMPurify · SAP Fundamental Styles. Die Oberfläche braucht keinen Build-Schritt. Nur der formatierte Editor (Milkdown-Kern, ProseMirror, remark) wird einmal gebündelt; das fertige Bündel liegt im Repository, die Quellen und die Bauanleitung in [`editor/`](editor/).
+Python · FastAPI · SQLite FTS5 · pypdfium2 · Tesseract · PDF.js · marked · DOMPurify · Mermaid · SAP Fundamental Styles. Die Oberfläche braucht keinen Build-Schritt. Nur der formatierte Editor (Milkdown-Kern, ProseMirror, remark) wird einmal gebündelt; das fertige Bündel liegt im Repository, die Quellen und die Bauanleitung in [`editor/`](editor/).
 
 ## Lizenz
 

@@ -142,6 +142,8 @@ const I18N = {
     "ed.saved": "Gespeichert",
     "ed.saving": "Speichert …",
     "ed.discard": "Die ungespeicherten Änderungen verwerfen?",
+    "page.chartError": "Das Diagramm lässt sich nicht zeichnen – hier sein Text.",
+    "page.chartZoom": "Antippen: volle Größe oder wieder an die Breite angepasst",
     "ed.lost": "Die Sperre ist an {by} gegangen. Sichere deinen Text, bevor du die Seite verlässt.",
     "ed.upload": "Lädt {name} hoch …",
     "ed.menu": "Mehr",
@@ -629,6 +631,8 @@ const I18N = {
     "ed.saved": "Saved",
     "ed.saving": "Saving …",
     "ed.discard": "Discard the unsaved changes?",
+    "page.chartError": "The diagram cannot be drawn – here is its text.",
+    "page.chartZoom": "Tap: full size, or fitted to the width again",
     "ed.lost": "The lock went to {by}. Keep a copy of your text before you leave the page.",
     "ed.upload": "Uploading {name} …",
     "ed.menu": "More",
@@ -1096,11 +1100,13 @@ function formatDate(iso) {
 // ----------------------------------------------------------------- theme
 
 const THEMES = ['system', 'light', 'dark'];
+let mermaidTheme = null;   // colours the diagrams were last drawn in (see drawChart)
 function applyTheme(theme) {
   const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   $('theme-dark').disabled = !dark;
   $('theme-light').disabled = dark;
   $('btn-theme').textContent = { system: '◐', light: '☀', dark: '☾' }[theme];
+  if (mermaidTheme && mermaidTheme !== (dark ? 'dark' : 'default')) redrawCharts();
 }
 let theme = store.get('theme', 'system');
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(theme));
@@ -3691,6 +3697,77 @@ async function renderPage(box, doc, text) {
     q.classList.add('callout', 'callout--' + CALLOUTS[m[1].toUpperCase()]);
   });
   box.querySelectorAll('input[type=checkbox]').forEach(c => { c.disabled = true; });
+  // ```mermaid … ``` as a diagram, as GitHub shows it
+  const charts = [...box.querySelectorAll('pre > code.language-mermaid')];
+  if (charts.length) drawCharts(charts);
+}
+
+// Mermaid is big (2.7 MB), so it is loaded only when a page holds a diagram.
+// securityLevel 'strict': labels are text, no clicks, no scripts – Mermaid cleans its own SVG.
+let mermaidBundle = null;
+let chartSeq = 0;
+function loadMermaid() {
+  mermaidBundle ||= new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'vendor/mermaid/mermaid.min.js';
+    s.onload = resolve;
+    s.onerror = () => { mermaidBundle = null; reject(new Error('mermaid')); };
+    document.head.appendChild(s);
+  });
+  return mermaidBundle;
+}
+
+async function drawCharts(codes) {
+  // swap each code block for an empty box first, keeping the text, so the page does not wait
+  const boxes = codes.map(code => {
+    const fig = document.createElement('div');
+    fig.className = 'chart';
+    fig.dataset.src = code.textContent;
+    code.parentElement.replaceWith(fig);
+    return fig;
+  });
+  try { await loadMermaid(); } catch { boxes.forEach(chartFailed); return; }
+  for (const fig of boxes) await drawChart(fig);
+}
+
+async function drawChart(fig) {
+  const theme = $('theme-dark').disabled ? 'default' : 'dark';
+  if (mermaidTheme !== theme) {
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme, suppressErrorRendering: true });
+    mermaidTheme = theme;
+  }
+  const id = 'chart-' + (++chartSeq);
+  try {
+    const { svg } = await mermaid.render(id, fig.dataset.src);
+    fig.innerHTML = svg;
+    fig.classList.remove('chart--failed', 'chart--full');
+    // a big diagram is shrunk to the page width; a tap shows it at full size (scroll sideways)
+    const pic = fig.querySelector('svg');
+    const full = pic?.viewBox?.baseVal?.width || 0;
+    if (pic && full > fig.clientWidth) {
+      fig.classList.add('chart--zoom');
+      fig.title = t('page.chartZoom');
+      fig.onclick = () => {
+        const on = fig.classList.toggle('chart--full');
+        pic.style.maxWidth = on ? 'none' : `${full}px`;
+        pic.style.width = on ? `${full}px` : '';
+      };
+    }
+  } catch {
+    document.getElementById(id)?.remove();
+    document.getElementById('d' + id)?.remove();
+    chartFailed(fig);
+  }
+}
+
+function chartFailed(fig) {
+  fig.classList.add('chart--failed');
+  fig.innerHTML = `<p class="chart__note">${esc(t('page.chartError'))}</p><pre><code>${esc(fig.dataset.src)}</code></pre>`;
+}
+
+// after switching light/dark the diagrams on screen are drawn again in the new colours
+function redrawCharts() {
+  document.querySelectorAll('.md .chart:not(.chart--failed)').forEach(drawChart);
 }
 
 async function showPage(box, doc) {
