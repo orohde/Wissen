@@ -74,6 +74,7 @@ Settings are made in the app. The compose file only holds folders, the port and,
 | `TZ` | `UTC` | Time zone, e.g. `Europe/Berlin` |
 | `VERSIONSPRUEFUNG` | on | `0` switches the daily check for new versions off for good (see below) |
 | `WISSEN_TRUSTED_PROXIES` | private ranges | Which addresses may report the client address via `X-Forwarded-For`, comma-separated (IP or network, e.g. `10.10.20.50`). Best set to your reverse proxy's address |
+| `WISSEN_MAX_UPLOAD_MB` | `100` | Largest request in MB; larger ones get 413 (a single attachment stays limited to 50 MB) |
 
 These variables only preset a fresh installation; once something is saved in the app, the app counts:
 

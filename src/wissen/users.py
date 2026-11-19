@@ -20,6 +20,7 @@ from pathlib import Path
 from .security import new_recovery_codes, new_totp_secret, recovery_hash, totp_match
 
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")
+RESERVED = {"api", "upload", "system"}   # names the app itself acts under (API keys, the upload door)
 PERMISSIONS = ("read", "write")
 MIN_PASSWORD = 12
 
@@ -128,7 +129,7 @@ class UserStore:
     def create(self, name: str, password: str, display_name: str = "", is_admin: bool = False,
                areas: dict[str, str] | None = None, only_if_empty: bool = False) -> Account:
         name = name.strip().lower()
-        if not NAME_RE.match(name):
+        if not NAME_RE.match(name) or name in RESERVED:
             raise UserError("invalid user name")
         _check_password(password)
         with self._lock:

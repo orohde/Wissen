@@ -72,6 +72,7 @@ Eingestellt wird in der App. In die Compose-Datei gehören nur Ordner, Port und,
 | `TZ` | `UTC` | Zeitzone, z. B. `Europe/Berlin` |
 | `VERSIONSPRUEFUNG` | an | `0` schaltet die tägliche Frage nach neuen Versionen dauerhaft ab (siehe unten) |
 | `WISSEN_TRUSTED_PROXIES` | private Netze | Von welchen Adressen `X-Forwarded-For` geglaubt wird, durch Komma getrennt (IP oder Netz, z. B. `10.10.20.50`). Am besten die Adresse des Reverse Proxys eintragen |
+| `WISSEN_MAX_UPLOAD_MB` | `100` | Größte Anfrage in MB; größere bekommen 413 (ein einzelner Anhang bleibt auf 50 MB begrenzt) |
 
 Diese Variablen gelten nur als Vorgabe für eine frische Installation; sobald in der App etwas gespeichert ist, zählt die App:
 
