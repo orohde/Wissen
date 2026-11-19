@@ -3,7 +3,7 @@ import functools
 import pytest
 
 from wissen.config import Settings
-from wissen.index import HL_START, Index, parse_name, shortest_unique_ids, split_path
+from wissen.index import HL_START, Index, natural_key, parse_name, shortest_unique_ids, split_path
 from wissen.textextract import extract
 
 
@@ -118,7 +118,20 @@ def test_list_sorting(index: Index):
     assert oldest == sorted(dates)
     # undated ones stay at the end either way
     assert all(d["date"] for d in listed(sort="date", desc=False)[: len(dates)])
-    titles = [d["title"].casefold() for d in listed(sort="title", desc=False)]
-    assert titles == sorted(titles)
-    assert [d["title"].casefold() for d in listed(sort="title")] == sorted(titles, reverse=True)
+    titles = [d["title"] for d in listed(sort="title", desc=False)]
+    assert titles == sorted(titles, key=natural_key)
+    assert [d["title"] for d in listed(sort="title")] == sorted(titles, key=natural_key, reverse=True)
     assert [d["area"] for d in listed(sort="area", desc=False)] == sorted(d["area"] for d in newest)
+
+
+def test_natural_title_order(index: Index, settings: Settings):
+    shelf = settings.archive / "gemeinsam/Zeitschriften/Holzwerken"
+    shelf.mkdir(parents=True)
+    for name in ("Holzwerken 100 (2024)", "holzwerken 99 (2023)", "Holzwerken 9 (2020)", "Holzwerken 130 (2026)"):
+        (shelf / f"{name}.pdf").write_bytes(b"%PDF-1.4\n" + name.encode() + b"\n%%EOF\n")
+    index.scan()
+    got = index.documents(["gemeinsam"], folder="Zeitschriften/Holzwerken", sort="title", desc=False)["items"]
+    assert [d["title"] for d in got] == ["Holzwerken 9 (2020)", "holzwerken 99 (2023)",
+                                         "Holzwerken 100 (2024)", "Holzwerken 130 (2026)"]
+    newest = index.documents(["gemeinsam"], folder="Zeitschriften/Holzwerken", sort="title", desc=True)["items"]
+    assert newest[0]["title"] == "Holzwerken 130 (2026)"

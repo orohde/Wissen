@@ -267,7 +267,7 @@ def test_language_preference(client: TestClient):
     assert client.get("/api/me").json()["language"] == "it"
     assert client.put("/api/me/prefs", json={"language": "xx"}).status_code == 400
     client.put("/api/me/prefs", json={"tree_open": ["Banken"]})          # tree state keeps the language
-    assert client.get("/api/me/prefs").json() == {"tree_open": ["Banken"], "language": "it", "editor": "source", "zoom": 100, "width": 85}
+    assert client.get("/api/me/prefs").json() == {"tree_open": ["Banken"], "language": "it", "editor": "source", "zoom": 100, "width": 85, "shelves": []}
 
 
 def test_text_errors_list_and_retry(client: TestClient):
@@ -307,3 +307,16 @@ def test_area_without_owner(client: TestClient, settings):
     assert client.delete("/api/areas/oliver").status_code == 409
     assert client.delete("/api/areas/haus").status_code == 200
     assert not (settings.archive / "haus").exists()
+
+
+def test_shelf_folders_follow_the_account(client: TestClient):
+    login(client, "oliver", "geheim123")
+    assert client.get("/api/me").json()["shelves"] == []
+    res = client.put("/api/me/shelf", json={"folder": "gemeinsam/Zeitschriften/Holzwerken", "shelf": True})
+    assert res.status_code == 200 and res.json()["shelves"] == ["gemeinsam/Zeitschriften/Holzwerken"]
+    client.put("/api/me/shelf", json={"folder": "", "shelf": True})
+    client.put("/api/me/shelf", json={"folder": "", "shelf": True})          # twice stays once
+    assert client.get("/api/me").json()["shelves"] == ["", "gemeinsam/Zeitschriften/Holzwerken"]
+    client.put("/api/me/shelf", json={"folder": "", "shelf": False})
+    assert client.get("/api/me/prefs").json()["shelves"] == ["gemeinsam/Zeitschriften/Holzwerken"]
+    assert client.put("/api/me/shelf", json={"folder": "x" * 1001, "shelf": True}).status_code == 422

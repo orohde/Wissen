@@ -1,8 +1,9 @@
 """Per-person view settings that follow the account, not the browser.
 
 Kept in ``prefs.json`` in the data folder, one entry per user name: which folders
-are expanded in the sidebar tree, the language, and the documents pinned to the
-start page.
+are expanded in the sidebar tree, the language, the documents pinned to the
+start page, the folders shown as a shelf of covers instead of a list, and how far each PDF
+has been read (page, of how many, finished) – kept per content, so it survives renaming and moving.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ WIDTH = (40, 100, 85)             # reading width in percent of the window: a li
 MAX_PATHS = 5000
 MAX_PATH_LEN = 1000
 MAX_PINS = 200
+MAX_READING = 3000               # PDFs whose reading position is kept per person; the oldest go first
 
 
 def _within(value, limits: tuple[int, int, int]) -> int:
@@ -52,7 +54,8 @@ class PrefsStore:
             p = self._load().get(user, {})
         return {"tree_open": list(p.get("tree_open", [])), "language": p.get("language", ""),
                 "editor": p.get("editor") if p.get("editor") in EDITORS else "source",
-                "zoom": _within(p.get("zoom"), ZOOM), "width": _within(p.get("width"), WIDTH)}
+                "zoom": _within(p.get("zoom"), ZOOM), "width": _within(p.get("width"), WIDTH),
+                "shelves": list(p.get("shelves", []))}
 
     def set_language(self, user: str, language: str) -> str:
         if language not in LANGUAGES:
@@ -90,6 +93,47 @@ class PrefsStore:
             users.setdefault(user, {})["tree_open"] = clean
             self._save(users)
         return clean
+
+    def set_shelf(self, user: str, folder: str, on: bool) -> list[str]:
+        """Show a folder ("area/sub/folder", "" for everything) as a shelf of covers, or as the list again."""
+        folder = str(folder)
+        if len(folder) > MAX_PATH_LEN:
+            raise ValueError("path too long")
+        with self._lock:
+            users = self._load()
+            shelves = [f for f in users.get(user, {}).get("shelves", []) if f != folder]
+            if on:
+                shelves.append(folder)
+            users.setdefault(user, {})["shelves"] = sorted(shelves)[:MAX_PATHS]
+            self._save(users)
+        return users[user]["shelves"]
+
+    def reading(self, user: str) -> dict[str, dict]:
+        """sha256 of a PDF -> {page, total, done, at}."""
+        with self._lock:
+            return {k: dict(v) for k, v in self._load().get(user, {}).get("reading", {}).items() if isinstance(v, dict)}
+
+    def set_reading(self, user: str, sha: str, page: int | None = None, total: int | None = None,
+                    done: bool | None = None, at: str = "") -> dict:
+        with self._lock:
+            users = self._load()
+            reading = users.setdefault(user, {}).setdefault("reading", {})
+            entry = dict(reading.get(sha) or {"page": 1, "total": 0, "done": False})
+            if total is not None:
+                entry["total"] = max(0, int(total))
+            if page is not None:
+                entry["page"] = max(1, int(page))
+                if entry["total"]:
+                    entry["page"] = min(entry["page"], entry["total"])
+            if done is not None:
+                entry["done"] = bool(done)
+            entry["at"] = at
+            reading[sha] = entry
+            if len(reading) > MAX_READING:
+                for old in sorted(reading, key=lambda k: reading[k].get("at", ""))[: len(reading) - MAX_READING]:
+                    del reading[old]
+            self._save(users)
+        return entry
 
     def pins(self, user: str) -> list[str]:
         """Keys of the pinned documents in their order: page id, or content hash for a PDF."""

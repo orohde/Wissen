@@ -150,3 +150,23 @@ def test_ask_passes_on_what_goes_wrong(client: TestClient):
     client.app.state.ai.complete = broken
     res = client.post("/api/ask", headers=API, json={"question": "Wie entlüfte ich die Heizung?"})
     assert res.status_code == 400 and res.json()["detail"] == "monthly limit reached"
+
+
+def test_ask_for_a_voice(client: TestClient):
+    client.app.state.ai.update({"enabled": True})
+    seen = stand_in(client, "**Laut der Anleitung** [1]:\n1. Ventil eine Vierteldrehung öffnen [1]\n- Wasser auffangen")
+    res = client.post("/api/ask", headers=API, json={"question": "Wie entlüfte ich die Heizung?", "voice": True}).json()
+    assert res["answer"] == "Laut der Anleitung: Ventil eine Vierteldrehung öffnen Wasser auffangen"
+    assert res["sources"][0]["title"] == "Heizung entlüften"
+    assert "read out" in seen["system"] and "No brackets" in seen["system"]
+
+
+def test_a_reading_key_may_ask_but_not_change(client: TestClient):
+    client.app.state.ai.update({"enabled": True})
+    stand_in(client)
+    made = client.post("/api/security/api-keys", headers=API, json={"name": "Home Assistant", "right": "read"}).json()
+    reader = {"Authorization": "Bearer " + made["token"]}
+    res = client.post("/api/ask", headers=reader, json={"question": "Wie entlüfte ich die Heizung?", "voice": True})
+    assert res.status_code == 200 and res.json()["found"] is True
+    assert client.post("/api/pages", headers=reader, json={"area": "oliver", "title": "x"}).status_code == 403
+    assert client.put("/api/me/reading", headers=reader, json={"id": "heiz000001", "page": 2}).status_code == 403

@@ -412,5 +412,7 @@ def test_a_reading_key_changes_nothing(client: TestClient):
     reader = TestClient(client.app)
     auth = {"Authorization": f"Bearer {key}"}
     assert reader.get("/api/documents/abc123def0", headers=auth).status_code == 200
-    for method, path in (("PUT", "/api/documents/abc123def0/pin"), ("PUT", "/api/me/pins"), ("POST", "/api/ask")):
+    # asking the archive only reads (a voice assistant asks with a reading key): see test_ask
+    for method, path in (("PUT", "/api/documents/abc123def0/pin"), ("PUT", "/api/me/pins"), ("POST", "/api/pages"),
+                         ("POST", "/api/inbox/upload?name=x.pdf"), ("PUT", "/api/me/reading")):
         assert reader.request(method, path, headers=auth, json={}).status_code == 403, path

@@ -6,6 +6,8 @@ import functools
 import hashlib
 import logging
 import os
+import io
+from datetime import date
 import re
 import shutil
 import threading
@@ -27,7 +29,7 @@ from .auth import (User, client_ip, cookie_name, current_user, is_external, is_h
 from .config import Settings, load_settings
 from . import ask, docops, links
 from .docops import DocOpError
-from .index import Index, on_disk
+from .index import Index, on_disk, sha256_file
 from .pages import head_block, new_id, read_head, set_head
 from .prefs import PrefsStore
 from .security import (
@@ -37,9 +39,14 @@ from .storage import StorageError, StorageService, path_status
 from .system import SystemConfig, SystemStore
 from .versionspruefung import UpdateCheck
 from .tags import TagError, TagStore
+from .inbox import INBOX_NAME, InboxError, InboxService
+from .toc import TocStore
+from .vikunja import SYSTEM as MAINTENANCE_SYSTEM, TEXT_CHARS as MAINTENANCE_CHARS, VikunjaError, VikunjaService, parse_tasks
 from .textextract import extract, render_thumb, tesseract_available
 from .users import UserError, UserStore
 from .versions import Locked, Locks, VersionError, Versions, diff
+
+THUMB_WIDTH = 360   # covers on the shelf stay sharp on high-resolution screens
 
 log = logging.getLogger("wissen")
 STATIC = Path(__file__).parent / "static"
@@ -126,6 +133,11 @@ class TreePrefs(BaseModel):
     width: int | None = Field(None, description="reading width in percent of the window")
 
 
+class ShelfChange(BaseModel):
+    folder: str = Field("", max_length=1000, description='folder as in the list ("area/sub"), "" for everything')
+    shelf: bool = Field(..., description="true: covers on a shelf, false: the list")
+
+
 class NewUser(BaseModel):
     name: str
     password: str
@@ -152,6 +164,7 @@ class AIChange(BaseModel):
     clear_key: bool = False
     monthly_limit_usd: float | None = Field(None, ge=0)
     excluded_areas: list[str] | None = None
+    inbox_auto: bool | None = None
 
 
 class StorageChange(BaseModel):
@@ -163,6 +176,7 @@ class StorageChange(BaseModel):
 class AskIn(BaseModel):
     question: str = Field(min_length=3, max_length=600)
     areas: str | None = Field(None, max_length=2000, description="comma-separated areas; default: all the user may read")
+    voice: bool = Field(False, description="a short answer to be read out (Home Assistant, Siri): no marks, no Markdown")
 
 
 class PinIn(BaseModel):
@@ -216,6 +230,41 @@ class MoveIn(BaseModel):
     area: str | None = Field(None, max_length=40)
 
 
+class ReadingIn(BaseModel):
+    id: str = Field(max_length=64, description="the PDF's id")
+    page: int | None = Field(None, ge=1, le=100000)
+    total: int | None = Field(None, ge=0, le=100000)
+    done: bool | None = None
+
+
+class VikunjaChange(BaseModel):
+    url: str | None = Field(None, max_length=300)
+    token: str | None = Field(None, max_length=500)
+    clear_token: bool = False
+    project_id: int | None = Field(None, ge=0)
+    project_title: str | None = Field(None, max_length=200)
+
+
+class MaintenanceTask(BaseModel):
+    title: str = Field(min_length=1, max_length=250)
+    every_days: int | None = Field(None, ge=1, le=3660)
+    due: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    note: str = Field("", max_length=1000)
+    page: int | None = Field(None, ge=1)
+
+
+class MaintenanceIn(BaseModel):
+    tasks: list[MaintenanceTask] = Field(max_length=30)
+    link: str = Field("", max_length=600, description="where the task points back to (the document in Wissen!)")
+
+
+class InboxFileIn(BaseModel):
+    area: str = Field(max_length=40)
+    folder: str = Field("", max_length=1000)
+    title: str = Field(max_length=200)
+    force: bool = Field(False, description="file even if the same content is already in the archive")
+
+
 class TrashRestoreIn(BaseModel):
     trash_path: str = Field(max_length=2000)
 
@@ -249,6 +298,13 @@ def _worker(app: FastAPI, stop: threading.Event) -> None:
                     log.info("texts extracted: %s, status %s", done, index.text_status())
         except Exception:  # noqa: BLE001 - keep the loop alive
             log.exception("background work failed")
+        try:            # "Eingang automatisch vorsortieren": every round, not only with a full scan
+            areas = [a["name"] for a in app.state.index.areas()]
+            asked = app.state.inbox.auto_ai(app.state.ai, lambda: app.state.inbox_ai_args(areas))
+            if asked:
+                log.info("inbox: AI asked for %s file(s)", asked)
+        except Exception:  # noqa: BLE001
+            log.exception("inbox: automatic AI failed")
         if config.rescan_minutes <= 0:
             return
         app.state.wake.wait(WAKE_SECONDS)
@@ -321,6 +377,21 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         config = app.state.system.load()
         return functools.partial(extract, ocr=config.ocr, lang=config.ocr_lang, max_ocr_pages=config.ocr_max_pages)
     app.state.make_extractor = make_extractor
+    inbox_env = os.environ.get("WISSEN_INBOX", "").strip()
+    app.state.vikunja = VikunjaService(settings.data / "vikunja.json")
+    app.state.toc = TocStore(settings.data / "toc")
+    app.state.inbox = InboxService(app.state.index, Path(inbox_env).resolve() if inbox_env else None,
+                                   settings.data / "inbox-ai.json")
+
+    def inbox_ai_args(areas: list[str]):
+        """What the AI gets to choose from: the areas with their names and the folders that exist."""
+        folders = sorted({f"{d['area']}/{d['folder']}"
+                          for d in app.state.index.documents(areas, recursive=True, limit=5000)["items"] if d["folder"]},
+                         key=str.casefold)
+        labels = [{"name": a, "label": area_label(a)} for a in areas]
+        extractor = app.state.make_extractor()
+        return (lambda p: extractor(p, "pdf").text), labels, folders
+    app.state.inbox_ai_args = inbox_ai_args
 
     def kick(full: bool = True) -> None:
         if full:
@@ -460,7 +531,8 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
                 "write_areas": [a for a in allowed_areas(user) if user.can_write(a)],
                 "language": app.state.prefs.get(user.name)["language"],
                 "editor": app.state.prefs.get(user.name)["editor"],
-                "zoom": app.state.prefs.get(user.name)["zoom"], "width": app.state.prefs.get(user.name)["width"]}
+                "zoom": app.state.prefs.get(user.name)["zoom"], "width": app.state.prefs.get(user.name)["width"],
+                "shelves": app.state.prefs.get(user.name)["shelves"]}
 
     @app.get("/api/me/prefs", tags=["auth"])
     def my_prefs(user: User = Depends(current_user)):
@@ -483,6 +555,189 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         if body.tree_open is not None:
             app.state.prefs.set_tree_open(user.name, body.tree_open)
         return app.state.prefs.get(user.name)
+
+    @app.post("/api/documents/{doc_id}/cheatsheet", tags=["ai"])
+    def make_cheatsheet(doc_id: str, user: User = Depends(current_user)):
+        """Let the AI write a "Spickzettel" for a PDF: a page next to it with the essentials and page links.
+
+        An existing one is rewritten (its earlier text stays in the versions)."""
+        from . import cheatsheet
+        doc = _writable_doc(doc_id, user)
+        if doc["ext"] != "pdf":
+            raise HTTPException(status_code=400, detail="only for PDFs")
+        config = app.state.ai.load()
+        if not config.enabled:
+            raise HTTPException(status_code=400, detail="AI is disabled")
+        if not app.state.ai.allowed_for(doc["area"]):
+            raise HTTPException(status_code=403, detail="this area is never sent to the AI")
+        body = app.state.index.document_text(doc["sha256"])
+        if not body.strip():
+            raise HTTPException(status_code=409, detail="the text of this PDF is not read yet")
+        limit = cheatsheet.HOSTED_CHARS if config.provider == "anthropic" else cheatsheet.LOCAL_CHARS
+        text, pages, cut = cheatsheet.pages_text(body, limit)
+        try:
+            answer = app.state.ai.complete(cheatsheet.SYSTEM, cheatsheet.prompt(doc["title"], text, cut),
+                                           max_tokens=6000, effort="medium")
+        except AIError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        pdf_name = doc["path"].rsplit("/", 1)[-1]
+        title = doc["title"] + cheatsheet.SUFFIX
+        content = cheatsheet.page_text(doc["title"], pdf_name, answer.text, pages, answer.model, cut)
+        rel = "/".join(filter(None, [doc["area"], doc.get("folder") or "", docops.file_stem(title) + ".md"]))
+        existing = app.state.index.by_path(rel, allowed_areas(user))
+        if existing:
+            old = docops.read_page(app.state.index.archive, existing)
+            text = set_head(head_block(old).rstrip("\n") + "\n\n" + content, date=time.strftime("%Y-%m-%d"))   # same id, new text
+            return _save(existing, user, text, old)
+        try:
+            rel = docops.new_page(app.state.index.archive, doc["area"], doc.get("folder") or "", title, content)
+        except DocOpError as exc:
+            raise _op(exc) from exc
+        return _changed(user, rel)
+
+    # ------------------------------------------------------------- table of contents
+
+    @app.get("/api/documents/{doc_id}/toc", tags=["archive"])
+    def get_toc(doc_id: str, user: User = Depends(current_user)):
+        """The articles of a magazine with the PDF page they start on (empty until made)."""
+        doc = _doc_or_404(doc_id, user)
+        found = app.state.toc.get(doc["sha256"]) if doc["ext"] == "pdf" else None
+        return found or {"entries": [], "model": "", "at": ""}
+
+    @app.post("/api/documents/{doc_id}/toc", tags=["ai"])
+    def make_toc(doc_id: str, user: User = Depends(current_user)):
+        """Let the AI list the articles (a few cents for a magazine); an earlier list is replaced."""
+        from . import toc
+        doc = _writable_doc(doc_id, user)
+        if doc["ext"] != "pdf":
+            raise HTTPException(status_code=400, detail="only for PDFs")
+        if not app.state.ai.load().enabled:
+            raise HTTPException(status_code=400, detail="AI is disabled")
+        if not app.state.ai.allowed_for(doc["area"]):
+            raise HTTPException(status_code=403, detail="this area is never sent to the AI")
+        text, pages = toc.build_text(app.state.index.document_text(doc["sha256"]))
+        if not text.strip():
+            raise HTTPException(status_code=409, detail="the text of this PDF is not read yet")
+        try:
+            answer = app.state.ai.complete(toc.SYSTEM, f"Dokument: {doc['title']}\n\n{text}", max_tokens=4000)
+        except AIError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return app.state.toc.put(doc["sha256"], toc.parse(answer.text, pages), answer.model)
+
+    @app.get("/api/tocs", tags=["archive"])
+    def tocs_known(user: User = Depends(current_user)):
+        """Content hashes of the PDFs that have a table of contents (for the shelf)."""
+        return sorted(app.state.toc.known() & set(app.state.index.shas(allowed_areas(user))))
+
+    # ------------------------------------------------------------- vikunja
+
+    @app.get("/api/vikunja", tags=["vikunja"])
+    def get_vikunja(user: User = Depends(require_admin)):
+        return app.state.vikunja.load().public()
+
+    @app.put("/api/vikunja", tags=["vikunja"])
+    def put_vikunja(body: VikunjaChange, user: User = Depends(require_admin)):
+        try:
+            return app.state.vikunja.update(body.url, body.token, body.project_id, body.project_title,
+                                            body.clear_token).public()
+        except VikunjaError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.get("/api/vikunja/projects", tags=["vikunja"])
+    def vikunja_projects(user: User = Depends(require_admin)):
+        """The projects the token can see – also the connection test."""
+        try:
+            return app.state.vikunja.projects()
+        except VikunjaError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/documents/{doc_id}/maintenance", tags=["vikunja"])
+    def maintenance_suggest(doc_id: str, user: User = Depends(current_user)):
+        """The AI reads the recurring maintenance of a manual or cheat sheet; nothing is created yet."""
+        doc = _doc_or_404(doc_id, user)
+        if not app.state.ai.load().enabled:
+            raise HTTPException(status_code=400, detail="AI is disabled")
+        if not app.state.ai.allowed_for(doc["area"]):
+            raise HTTPException(status_code=403, detail="this area is never sent to the AI")
+        if doc["ext"] == "md":
+            from .pages import body_text
+            text = body_text(docops.read_page(app.state.index.archive, doc))
+        else:
+            from . import cheatsheet
+            text = cheatsheet.pages_text(app.state.index.document_text(doc["sha256"]), MAINTENANCE_CHARS)[0]
+        if not text.strip():
+            raise HTTPException(status_code=409, detail="the text of this document is not read yet")
+        try:
+            answer = app.state.ai.complete(MAINTENANCE_SYSTEM, f"Dokument: {doc['title']}\n\n{text[:MAINTENANCE_CHARS]}",
+                                           max_tokens=2000)
+        except AIError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"tasks": parse_tasks(answer.text)}
+
+    @app.post("/api/documents/{doc_id}/maintenance/create", tags=["vikunja"])
+    def maintenance_create(doc_id: str, body: MaintenanceIn, user: User = Depends(current_user)):
+        """Create the confirmed tasks in the chosen Vikunja project, each pointing back to the document."""
+        doc = _doc_or_404(doc_id, user)
+        if not [a for a in allowed_areas(user) if user.can_write(a)]:
+            raise HTTPException(status_code=403, detail="no write access")
+        link = body.link if re.match(r"^https?://", body.link or "") else ""
+        made, failed = [], []
+        for task in body.tasks:
+            lines = [task.note] if task.note else []
+            if link:
+                lines.append(f"Aus Wissen!: [{doc['title']}{f', S. {task.page}' if task.page else ''}]({link})")
+            due = date.fromisoformat(task.due) if task.due else None
+            try:
+                made.append(app.state.vikunja.create_task(task.title, "\n\n".join(lines), due, task.every_days))
+            except VikunjaError as exc:
+                failed.append({"title": task.title, "error": str(exc)})
+                if any(w in str(exc) for w in ("token", "reached", "set up", "project")):   # the rest would fail alike
+                    break
+        return {"created": made, "failed": failed}
+
+    @app.get("/api/qr", tags=["archive"])
+    def qr_code(text: str = Query(..., max_length=600, description="what the code holds, an http(s) link"),
+                user: User = Depends(current_user)):
+        """A QR code as SVG, e.g. for a sticker that opens a manual on the phone."""
+        if not re.match(r"^https?://", text):
+            raise HTTPException(status_code=400, detail="only links")
+        import segno
+        buf = io.BytesIO()
+        segno.make(text, error="m").save(buf, kind="svg", scale=10, border=2, dark="#000", light="#fff",
+                                         xmldecl=False, svgns=True)
+        return Response(buf.getvalue(), media_type="image/svg+xml",
+                        headers={"Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+                                 "X-Content-Type-Options": "nosniff"})
+
+    @app.get("/api/me/reading", tags=["archive"])
+    def my_reading(user: User = Depends(current_user)):
+        """How far this account got in its PDFs: {id: {page, total, done, at}} for the documents it may read."""
+        mine = app.state.prefs.reading(_holder(user))
+        if not mine:
+            return {}
+        areas = allowed_areas(user)
+        found = {}
+        for doc in app.state.index.documents(areas, recursive=True, kind="pdf", limit=100000)["items"]:
+            if doc["sha256"] in mine:
+                found[doc["id"]] = mine[doc["sha256"]]
+        return found
+
+    @app.put("/api/me/reading", tags=["archive"])
+    def put_my_reading(body: ReadingIn, user: User = Depends(current_user)):
+        """Remember the page of a PDF (the reader does this while scrolling), or mark it as read."""
+        doc = _doc_or_404(body.id, user)
+        if doc["ext"] != "pdf":
+            raise HTTPException(status_code=400, detail="only PDFs have a reading position")
+        return app.state.prefs.set_reading(_holder(user), doc["sha256"], body.page, body.total, body.done,
+                                           time.strftime("%Y-%m-%dT%H:%M:%S"))
+
+    @app.put("/api/me/shelf", tags=["auth"])
+    def put_my_shelf(body: ShelfChange, user: User = Depends(current_user)):
+        """Show a folder as a shelf of covers (first pages) or as the list."""
+        try:
+            return {"shelves": app.state.prefs.set_shelf(user.name, body.folder, body.shelf)}
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     def confirm(name: str, request: Request, check) -> bool:
         """Password or code asked again while signed in: the same brake as at the sign-in, so a
@@ -668,7 +923,18 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         writable = path_status(str(app.state.index.archive))["writable"]
         return {**app.state.index.meta(), "readonly": not writable, "version": __version__,
                 "ocr": app.state.system.load().ocr and tesseract_available(),
-                "ask": app.state.ai.load().enabled}
+                "ask": app.state.ai.load().enabled,
+                "inbox": _inbox_count(user),
+                "vikunja": app.state.vikunja.load().public()["ready"]}
+
+    def _inbox_count(user: User) -> int | None:
+        """Waiting files for anyone who may file somewhere; None for read-only accounts."""
+        if not [a for a in allowed_areas(user) if user.can_write(a)]:
+            return None
+        try:
+            return app.state.inbox.count()
+        except OSError:
+            return 0
 
     @app.get("/api/text-errors", tags=["system"])
     def text_errors(user: User = Depends(current_user)):
@@ -1203,6 +1469,100 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
             raise HTTPException(status_code=413, detail="file too large")
         return asset_save(doc_id, name, await request.body(), user)
 
+    # ------------------------------------------------------------- inbox
+
+    def _filer(user: User) -> list[str]:
+        areas = [a for a in allowed_areas(user) if user.can_write(a)]
+        if not areas:
+            raise HTTPException(status_code=403, detail="no write access")
+        return areas
+
+    def _inbox_err(exc: Exception) -> HTTPException:
+        return _op(exc) if "unknown item" not in str(exc) else HTTPException(status_code=404, detail=str(exc))
+
+    @app.get("/api/inbox", tags=["inbox"])
+    def inbox_list(user: User = Depends(current_user)):
+        """Files waiting in the inbox (``_Eingang``), each with a suggestion where it belongs."""
+        areas = _filer(user)
+        ai = app.state.ai.load()
+        return {"items": app.state.inbox.items(set(areas)), "folder": INBOX_NAME
+                if app.state.inbox.root.parent == app.state.index.archive else str(app.state.inbox.root),
+                "areas": areas, "auto": ai.enabled and ai.inbox_auto}
+
+    @app.post("/api/inbox/upload", tags=["inbox"], status_code=201)
+    async def inbox_upload(request: Request, name: str = Query(..., max_length=200, description="file name, e.g. Heft.pdf"),
+                           user: User = Depends(current_user)):
+        """One file into the inbox, the file itself is the request body. Photos become PDFs."""
+        _filer(user)
+        data = await request.body()
+        if not data:
+            raise HTTPException(status_code=400, detail="empty file")
+        try:
+            added = app.state.inbox.add(name, data)
+        except (InboxError, OSError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        kick(full=False)            # the automatic AI (if on) need not wait for the next round
+        return {"name": added}
+
+    @app.get("/api/inbox/{key}/file", tags=["inbox"])
+    def inbox_pdf(key: str, user: User = Depends(current_user)):
+        _filer(user)
+        try:
+            path = app.state.inbox.path_of(key)
+        except InboxError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return FileResponse(path, media_type="application/pdf", filename=path.name,
+                            content_disposition_type="inline", headers=file_headers("pdf"))
+
+    @app.get("/api/inbox/{key}/thumb", tags=["inbox"])
+    def inbox_thumb(key: str, user: User = Depends(current_user)):
+        _filer(user)
+        try:
+            path = app.state.inbox.path_of(key)
+            sha = sha256_file(path)
+        except (InboxError, OSError) as exc:
+            raise HTTPException(status_code=404, detail="no preview") from exc
+        cache = settings.data / "thumbs" / f"{sha}.w{THUMB_WIDTH}.png"
+        if not cache.exists():
+            try:
+                render_thumb(path, "pdf", cache, width=THUMB_WIDTH)
+            except Exception as exc:  # noqa: BLE001
+                raise HTTPException(status_code=404, detail="no preview") from exc
+        return FileResponse(cache, media_type="image/png", headers={"Cache-Control": "max-age=86400"})
+
+    @app.post("/api/inbox/{key}/file", tags=["inbox"])
+    def inbox_do_file(key: str, body: InboxFileIn, user: User = Depends(current_user)):
+        """File one item: it moves into the archive as ``area/folder/title.pdf``."""
+        if body.area not in _filer(user):
+            raise HTTPException(status_code=403, detail="no write access")
+        try:
+            rel = app.state.inbox.file(key, body.area, body.folder, body.title, body.force)
+        except (InboxError, OSError) as exc:
+            raise _inbox_err(exc) from exc
+        kick(full=False)              # read the text in the background
+        return _changed(user, rel)
+
+    @app.post("/api/inbox/{key}/ai", tags=["inbox"])
+    def inbox_ai(key: str, user: User = Depends(current_user)):
+        """Ask the AI where the file belongs (area, folder, title)."""
+        areas = _filer(user)
+        try:
+            return app.state.inbox.ask_ai(key, app.state.ai, *inbox_ai_args(areas))
+        except InboxError as exc:
+            raise _inbox_err(exc) from exc
+        except AIError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.delete("/api/inbox/{key}", tags=["inbox"])
+    def inbox_delete(key: str, user: User = Depends(current_user)):
+        """Delete a file from the inbox for good (it was never in the archive)."""
+        _filer(user)
+        try:
+            app.state.inbox.delete(key)
+        except InboxError as exc:
+            raise _inbox_err(exc) from exc
+        return {"ok": True}
+
     @app.get("/api/documents/{doc_id}/lock", tags=["write"])
     def lock_state(doc_id: str, user: User = Depends(current_user)):
         return {"lock": _lock_view(_doc_or_404(doc_id, user), user)}
@@ -1335,14 +1695,14 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
     def document_thumb(doc_id: str, user: User = Depends(current_user)):
         """First page as a small picture (cached in the data folder)."""
         doc = _doc_or_404(doc_id, user)
-        cache = settings.data / "thumbs" / f"{doc['sha256']}.png"
+        cache = settings.data / "thumbs" / f"{doc['sha256']}.w{THUMB_WIDTH}.png"
         if not cache.exists():
             root = app.state.index.archive.resolve()
             path = on_disk(root, doc["path"]).resolve()
             if root not in path.parents or not path.is_file():
                 raise HTTPException(status_code=404, detail="file not found")
             try:
-                render_thumb(path, doc["ext"], cache)
+                render_thumb(path, doc["ext"], cache, width=THUMB_WIDTH)
             except Exception as exc:  # noqa: BLE001
                 raise HTTPException(status_code=404, detail="no preview") from exc
         return FileResponse(cache, media_type="image/png", headers={"Cache-Control": "max-age=86400"})
@@ -1357,9 +1717,12 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
     @app.put("/api/ai", tags=["ai"])
     def put_ai(body: AIChange, user: User = Depends(require_admin)):
         try:
-            return ai_view(app.state.ai.update(body.model_dump(exclude_unset=True)))
+            config = app.state.ai.update(body.model_dump(exclude_unset=True))
         except AIError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if config.enabled and config.inbox_auto:
+            kick(full=False)        # switched on: the inbox gets sorted now, not with the next round
+        return ai_view(config)
 
     @app.get("/api/ai/models", tags=["ai"])
     def ai_models(user: User = Depends(require_admin)):
@@ -1387,7 +1750,8 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         document_text=document_text, page_content=page_content, page_save=page_save, page_create=page_create,
         doc_rename=doc_rename, doc_move=doc_move, doc_trash=doc_trash, trash_items=trash_items,
         trash_restore=trash_restore, version_list=version_list, version_get=version_get, asset_save=asset_save,
-        version_restore=version_restore))
+        version_restore=version_restore, inbox_list=inbox_list, inbox_do_file=inbox_do_file,
+        InboxFileIn=InboxFileIn))
 
     @app.post("/api/ask", tags=["ai"])
     def ask_archive(body: AskIn, user: User = Depends(current_user)):
@@ -1406,10 +1770,18 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         if not passages:
             return {"found": False, "answer": "", "sources": []}
         try:
-            result = app.state.ai.complete(ask.SYSTEM, ask.prompt(body.question, passages),
-                                           max_tokens=1500 if limits is ask.HOSTED else 600, effort="medium")
+            if body.voice:
+                result = app.state.ai.complete(ask.VOICE_SYSTEM, ask.prompt(body.question, passages),
+                                               max_tokens=400, effort="low")
+            else:
+                result = app.state.ai.complete(ask.SYSTEM, ask.prompt(body.question, passages),
+                                               max_tokens=1500 if limits is ask.HOSTED else 600, effort="medium")
         except AIError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if body.voice:
+            return {"found": True, "answer": ask.spoken(result.text),
+                    "sources": [{"title": p.doc["title"], "page": p.page} for p in passages[:3]],
+                    "model": result.model, "seconds": result.seconds, "cost": round(result.cost, 6)}
         return {"found": True, "answer": result.text, "sources": ask.sources(passages, result.text),
                 "model": result.model, "seconds": result.seconds, "cost": round(result.cost, 6)}
 

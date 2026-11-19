@@ -166,6 +166,14 @@ def build_tools(ops: SimpleNamespace) -> dict[str, dict]:
     def restore_document(user: User, trash_path: str):
         return _brief(ops.trash_restore(TrashRestoreIn(trash_path=trash_path), user=user))
 
+    def list_inbox(user: User):
+        data = ops.inbox_list(user=user)
+        return [{"key": i["key"], "file": i["rel"], "added": i["added"], "size": i["size"],
+                 "already_in_archive": i["duplicate"], "suggestion": i["suggestion"]} for i in data["items"]]
+
+    def file_inbox_item(user: User, key: str, area: str, title: str, folder: str = "", force: bool = False):
+        return _brief(ops.inbox_do_file(key, ops.InboxFileIn(area=area, folder=folder, title=title, force=force), user=user))
+
     def list_versions(user: User, id: str):
         return ops.version_list(id, user=user)["items"]
 
@@ -245,6 +253,18 @@ def build_tools(ops: SimpleNamespace) -> dict[str, dict]:
             restore_document, "Restore from the trash", "Put a document from the trash back to where it was.",
             _schema({"trash_path": {"type": "string", "description": "trash_path from list_trash or trash_document."}},
                     ("trash_path",)), write=True),
+        "list_inbox": tool(
+            list_inbox, "List the inbox",
+            "PDFs waiting in the inbox (_Eingang) to be filed, oldest first, each with a suggestion (title from the file "
+            "name, area and folder from its subfolder) and the archive path if the same file is already there.",
+            _schema({})),
+        "file_inbox_item": tool(
+            file_inbox_item, "File an inbox item",
+            "Move one PDF from the inbox into the archive as area/folder/title.pdf. Refuses a file whose content is "
+            "already in the archive unless force is set.",
+            _schema({"key": {"type": "string", "description": "key from list_inbox."}, "area": _AREA, "folder": _FOLDER,
+                     "title": {"type": "string", "description": "Title = file name without .pdf, e.g. \"Holzwerken 131 (2026)\"."},
+                     "force": {"type": "boolean"}}, ("key", "area", "title")), write=True),
         "list_versions": tool(list_versions, "List versions of a page", "Earlier versions of a page, newest first; each is the text before a save.",
                               _schema({"id": _ID}, ("id",))),
         "read_version": tool(

@@ -183,3 +183,23 @@ def test_off_until_an_admin_turns_it_on(settings: Settings):
     assert rpc(fresh, "initialize").status_code == 200
     assert fresh.put("/api/system/settings", json={"mcp": False}).json()["mcp"] is False
     assert rpc(fresh, "ping").status_code == 403
+
+
+def test_inbox_tools(client: TestClient, settings: Settings):
+    import os
+    import time
+
+    from conftest import make_pdf
+    inbox = settings.archive / "_Eingang" / "gemeinsam"
+    inbox.mkdir(parents=True)
+    pdf = inbox / "Heft_7.pdf"
+    pdf.write_bytes(make_pdf("Heft sieben"))
+    past = time.time() - 60
+    os.utime(pdf, (past, past))
+    error, [items] = call(client, "list_inbox")
+    assert not error and items[0]["file"] == "gemeinsam/Heft_7.pdf"
+    assert items[0]["suggestion"] == {"title": "Heft 7", "area": "gemeinsam", "folder": ""}
+    error, [doc] = call(client, "file_inbox_item", key=items[0]["key"], area="gemeinsam", folder="Hefte", title="Heft 7")
+    assert not error and doc["path"] == "gemeinsam/Hefte/Heft 7.pdf"
+    error, [items] = call(client, "list_inbox")
+    assert items == []

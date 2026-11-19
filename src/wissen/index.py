@@ -76,6 +76,20 @@ def nfc(text: str) -> str:
     return unicodedata.normalize("NFC", text)
 
 
+_CHUNKS = re.compile(r"(\d+)")
+
+
+def natural_key(text: str) -> tuple:
+    """Numbers in a title count as numbers: "Heft 99" before "Heft 100", case does not matter."""
+    parts = _CHUNKS.split(fold(text or ""))
+    return tuple((0, int(p), p) if i % 2 else (1, p) for i, p in enumerate(parts) if p)
+
+
+def natural_compare(a: str, b: str) -> int:
+    ka, kb = natural_key(a), natural_key(b)
+    return (ka > kb) - (ka < kb)
+
+
 def fold(text: str) -> str:
     """Normalise text for case-insensitive matching."""
     return nfc(text).casefold()
@@ -171,6 +185,7 @@ class Index:
     def connect(self) -> sqlite3.Connection:
         con = sqlite3.connect(self.db_path, timeout=30)
         con.row_factory = sqlite3.Row
+        con.create_collation("NATSORT", natural_compare)
         con.execute("PRAGMA journal_mode=WAL")
         con.execute("PRAGMA synchronous=NORMAL")
         return con
@@ -212,9 +227,12 @@ class Index:
         root = self.archive
         for dirpath, dirnames, filenames in os.walk(root):
             # "<Seite>.assets" holds the pictures of a page, not documents of their own
+            top = Path(dirpath) == root
             dirnames[:] = sorted(
                 d for d in dirnames
                 if not d.startswith(".") and d not in SKIP_NAMES and not d.endswith(ASSET_SUFFIX)
+                # "_Eingang" and the like: special folders next to the areas, never documents
+                and not (top and d.startswith(("_", "@", "#")))
             )
             for name in filenames:
                 if name.startswith(".") or name in SKIP_FILES:
@@ -715,12 +733,12 @@ def _order(sort: str, desc: bool) -> str:
     way = "DESC" if desc else "ASC"
     date = f"f.doc_date IS NULL, f.doc_date {way}"
     if sort == "title":
-        return f"f.title COLLATE NOCASE {way}, f.doc_date DESC"
+        return f"f.title COLLATE NATSORT {way}, f.doc_date DESC"
     if sort == "changed":       # when the file was last written, not the date the document carries
-        return f"f.mtime {way}, f.title COLLATE NOCASE"
+        return f"f.mtime {way}, f.title COLLATE NATSORT"
     if sort == "area":
-        return f"f.area COLLATE NOCASE {way}, f.doc_date IS NULL, f.doc_date DESC, f.title COLLATE NOCASE"
-    return f"{date}, f.title COLLATE NOCASE"
+        return f"f.area COLLATE NOCASE {way}, f.doc_date IS NULL, f.doc_date DESC, f.title COLLATE NATSORT"
+    return f"{date}, f.title COLLATE NATSORT"
 
 
 def _public(row: sqlite3.Row) -> dict:

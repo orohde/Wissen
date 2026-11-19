@@ -21,17 +21,23 @@ Wissen! is the sister of [Ordnung!](https://github.com/orohde/Ordnung) (document
 
 - **Pages and PDFs as equals.** The emergency list you write yourself and the washing machine manual sit in the same tree and turn up in the same search. A page can point straight at page 3 of a PDF (`manual.pdf#page=3`).
 - **Full-text search** over titles, folders and the text of every page and every PDF, scans without a text layer included (Tesseract OCR, German and English, on your own machine). `#tag` filters by tag.
-- **Questions to the archive (optional, with AI).** Type a question into the search field – Wissen! picks the fitting passages from pages and PDFs, lets an AI answer from them and names the sources down to the PDF page. Only the question and these passages go to the provider. Providers: Claude, your own Ollama server or any other OpenAI-compatible server; off until you switch it on under *Settings → AI*.
+- **Inbox.** Drop PDFs onto the window (photos become PDFs) or put them into the folder `_Eingang` in the archive, over the share or a sync service. Wissen! suggests title, area and folder – from file name and subfolder, or from the AI if you like – and files only once you confirm. Duplicates are spotted beforehand.
+- **A PDF reader of its own.** PDFs open in Wissen! itself, on the phone too with every page. Wissen! remembers per account the page you were on and what you have read.
+- **A shelf for magazines.** A folder can show as a shelf of covers instead of a list, with reading progress. Titles sort naturally: issue 99 before issue 100.
+- **QR stickers.** A sticker to print for every document; the phone opens the manual with it, at the right page if you like.
+- **Questions to the archive (optional, with AI).** Type a question into the search field – Wissen! picks the fitting passages from pages and PDFs, lets an AI answer from them and names the sources down to the PDF page. Only the question and these passages go to the provider. Providers: Claude, your own Ollama server or any other OpenAI-compatible server; off until you switch it on under *Settings → AI*. With `"voice": true`, `/api/ask` gives short answers to be read out by voice assistants such as Home Assistant.
+- **More with AI (optional).** *Cheat sheet*: a page next to a manual with maintenance, error codes, spare parts and values, each with a link to its page. *Table of contents* for magazines with the page each article starts on. *Sort the inbox*: a suggestion for every new file.
+- **Maintenance to Vikunja.** The AI reads the recurring maintenance from a manual; what you pick becomes recurring tasks in [Vikunja](https://vikunja.io), with a link back.
 - **Two ways to write.** *Formatted* shows the page as it will look, with a toolbar for bold, lists, tasks, links, pictures and tables. *Source* shows the Markdown with the preview beside it. Wissen! remembers for your account which one you used last.
 - **Writing without worry.** Saving from the formatted view rewrites only the paragraphs you touched; the rest stays in the file character for character. Before saving, Wissen! reads the result back and compares it with what you see.
 - **Versions.** Every text before a save is kept, can be compared with the page as it is now and restored.
 - **A lock instead of a muddle.** Whoever edits a page holds it; others see who is writing. The lock ends by itself once the editor is closed.
 - **Start page.** Wissen! opens with what you pinned and what changed last. Everybody pins for themselves.
 - **Callouts, task lists, tables, pictures.** A page's pictures live in a folder right next to it (`<page>.assets/`) and can be pasted or dropped in while writing.
-- **New page, rename, move, trash.** When a document is renamed or moved, Wissen! corrects the links that point at it. Deleted documents stay in the trash for 30 days (adjustable) and can be put back.
+- **New page, rename, move, trash.** Moving also works by dragging onto a folder in the tree, several ticked documents at once. When a document is renamed or moved, Wissen! corrects the links that point at it. Deleted documents stay in the trash for 30 days (adjustable) and can be put back.
 - **Areas and rights.** An area is a top folder, for instance per topic, household or person. Rights are set per person and area: no access, read, or read and write.
 - **Reading width and text size** by slider, remembered per account. Light and dark.
-- **REST API and MCP.** Everything the interface can do works over the API as well (try it under `/api/docs`). For AI assistants there is an MCP endpoint at `/api/mcp`. Keys are made under *Settings → Connections*, read-only or read and write.
+- **REST API and MCP.** Everything the interface can do works over the API as well (try it under `/api/docs`). For AI assistants there is an MCP endpoint at `/api/mcp`. Keys are made under *Settings → Connections*, read-only or read and write; a read-only key may also ask the archive.
 - **Second factor** for signing in, mandatory for access from outside if you like.
 
 <table>
@@ -75,6 +81,7 @@ Settings are made in the app. The compose file only holds folders, the port and,
 | `VERSIONSPRUEFUNG` | on | `0` switches the daily check for new versions off for good (see below) |
 | `WISSEN_TRUSTED_PROXIES` | private ranges | Which addresses may report the client address via `X-Forwarded-For`, comma-separated (IP or network, e.g. `10.10.20.50`). Best set to your reverse proxy's address |
 | `WISSEN_MAX_UPLOAD_MB` | `100` | Largest request in MB; larger ones get 413 (a single attachment stays limited to 50 MB) |
+| `WISSEN_INBOX` | `<archive>/_Eingang` | Inbox: PDFs lying here (uploaded in the browser, copied over the share or by a sync client) wait under *Inbox* to be filed. A subfolder named like an area sets where it goes |
 
 These variables only preset a fresh installation; once something is saved in the app, the app counts:
 
@@ -95,7 +102,7 @@ Wissen! can tell whether a sign-in comes from the home network or from outside, 
 
 ### For AI assistants (MCP)
 
-MCP access is off in a fresh installation; an administrator switches it on under *Settings → Connections*. The endpoint `/api/mcp` speaks the Model Context Protocol (streamable HTTP) and takes the same key as the REST API as `Authorization: Bearer <key>`. The tools: list areas and folders, search, read, create a page, replace it, replace a passage, append, rename, move, trash and versions. Rights, the editing lock, versions and the trash apply as in the interface; a read-only key is offered no writing tool.
+MCP access is off in a fresh installation; an administrator switches it on under *Settings → Connections*. The endpoint `/api/mcp` speaks the Model Context Protocol (streamable HTTP) and takes the same key as the REST API as `Authorization: Bearer <key>`. The tools: list areas and folders, search, read, create a page, replace it, replace a passage, append, rename, move, trash, versions, list the inbox and file from it. Rights, the editing lock, versions and the trash apply as in the interface; a read-only key is offered no writing tool.
 
 ## How things are stored
 

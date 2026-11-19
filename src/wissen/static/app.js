@@ -39,6 +39,14 @@ const I18N = {
     "list.recursive": "mit Unterordnern",
     "list.empty": "Keine Dokumente.",
     "list.more": "Mehr laden",
+    "shelf.list": "Liste",
+    "shelf.shelf": "Regal",
+    "shelf.switch": "Diesen Ordner als Liste oder als Regal mit Titelbildern zeigen",
+    "shelf.sort": "Reihenfolge im Regal",
+    "shelf.sort.titleasc": "Titel A–Z",
+    "shelf.sort.titledesc": "Titel Z–A",
+    "shelf.sort.datedesc": "Neueste zuerst",
+    "shelf.sort.dateasc": "Älteste zuerst",
     "col.date": "Datum",
     "col.title": "Titel",
     "col.area": "Bereich",
@@ -146,6 +154,68 @@ const I18N = {
     "dm.open": "Öffnen",
     "dm.download": "Herunterladen",
     "dm.folder": "Im Ordnerbaum zeigen",
+    "toc.btn": "Inhalt",
+    "toc.title": "Inhalt",
+    "toc.none": "Für dieses Heft gibt es noch kein Inhaltsverzeichnis.",
+    "toc.make": "Mit KI erstellen",
+    "toc.redo": "Neu erstellen",
+    "toc.busy": "Die KI blättert „{title}“ durch …",
+    "toc.all": "Inhalte erstellen",
+    "toc.all.tip": "Inhaltsverzeichnisse für alle Hefte in diesem Regal, die noch keins haben (KI)",
+    "toc.all.none": "Alle Hefte hier haben schon ein Inhaltsverzeichnis.",
+    "toc.all.q": "Für {n} Hefte ein Inhaltsverzeichnis erstellen? Das kostet etwa {cost} und dauert pro Heft rund eine halbe Minute.",
+    "toc.all.busy": "Inhalt {n} von {total}: {title} …",
+    "toc.all.done": "{n} Inhaltsverzeichnisse erstellt.",
+    "toc.all.stopped": "Nach {n} Heften angehalten:",
+    "err.Vikunja is not set up": "Vikunja ist noch nicht eingerichtet (Einstellungen → Verbindungen).",
+    "err.no Vikunja project chosen": "In den Einstellungen ist noch kein Vikunja-Projekt gewählt.",
+    "err.Vikunja refused the token": "Vikunja lehnt den Token ab – abgelaufen oder ohne die nötigen Rechte?",
+    "err.Vikunja cannot be reached": "Vikunja ist nicht erreichbar.",
+    "err.address must start with https://": "Die Adresse muss mit https:// beginnen.",
+    "err.only for PDFs": "Das geht nur bei PDFs.",
+    "err.the text of this PDF is not read yet": "Der Text dieser PDF ist noch nicht gelesen – bitte gleich noch einmal versuchen.",
+    "err.the text of this document is not read yet": "Der Text dieses Dokuments ist noch nicht gelesen – bitte gleich noch einmal versuchen.",
+    "err.this area is never sent to the AI": "Dieser Bereich geht nie an die KI (Einstellungen → KI).",
+    "err.only links": "Nur Links sind erlaubt.",
+    "err.unknown item": "Diese Datei liegt nicht mehr im Eingang.",
+    "mt.menu": "Wartung nach Vikunja",
+    "mt.title": "Wartung: {title}",
+    "mt.busy": "Die KI sucht die Wartungsarbeiten heraus …",
+    "mt.none": "In diesem Dokument hat die KI keine wiederkehrenden Wartungsarbeiten gefunden.",
+    "mt.intro": "Anhaken, was du in Vikunja haben willst. Intervall und erster Termin lassen sich ändern; ohne Intervall wird es eine einmalige Aufgabe.",
+    "mt.every": "alle",
+    "mt.first": "zuerst am",
+    "mt.u.d": "Tage",
+    "mt.u.w": "Wochen",
+    "mt.u.m": "Monate",
+    "mt.u.y": "Jahre",
+    "mt.create": "In Vikunja anlegen",
+    "mt.done": "{n} Aufgabe(n) in Vikunja angelegt.",
+    "mt.open": "In Vikunja öffnen",
+    "vk.title": "Aufgaben in Vikunja",
+    "vk.url": "Adresse",
+    "vk.token": "API-Token",
+    "vk.project": "Projekt für die Aufgaben",
+    "vk.save": "Speichern und prüfen",
+    "vk.token.set": "Ein Token ist hinterlegt. Leer lassen, um ihn zu behalten.",
+    "vk.token.none": "Noch kein Token hinterlegt.",
+    "vk.project.pick": "– Projekt wählen –",
+    "vk.ok": "Verbunden. Die Wartung landet im gewählten Projekt.",
+    "vk.pick": "Verbunden – jetzt noch das Projekt wählen.",
+    "vk.hint": "Wartung aus Anleitungen und Spickzetteln wird zu wiederkehrenden Aufgaben in Vikunja (Menü ⋯ → „Wartung nach Vikunja“). Den Token legst du in Vikunja unter Einstellungen → API-Tokens an, mit dem Recht, Aufgaben anzulegen und Projekte zu lesen.",
+    "cs.menu": "Spickzettel (KI)",
+    "cs.busy": "Die KI liest „{title}“ und schreibt einen Spickzettel – das dauert etwa eine halbe Minute …",
+    "qr.title": "QR-Aufkleber",
+    "qr.label": "Beschriftung",
+    "qr.page": "Auf Seite öffnen (leer = gemerkte Stelle)",
+    "qr.size": "Größe",
+    "qr.small": "Klein (25 mm)",
+    "qr.medium": "Mittel (40 mm)",
+    "qr.large": "Groß (60 mm)",
+    "qr.copy": "Link kopieren",
+    "qr.copied": "Link kopiert.",
+    "qr.print": "Drucken",
+    "qr.popup": "Das Druckfenster wurde blockiert – bitte Pop-ups für Wissen! erlauben.",
     "start.pinned": "Angepinnt",
     "start.recent": "Zuletzt geändert",
     "start.all": "Alle Dokumente →",
@@ -194,6 +264,16 @@ const I18N = {
     "tr.back": "„{title}“ ist wieder da.",
     "rn.done": "Umbenannt in „{title}“.",
     "mv.done": "Verschoben nach {folder}.",
+    "rd.loading": "PDF wird geladen …",
+    "rd.of": "von {n}",
+    "rd.page": "Seite",
+    "rd.smaller": "Kleiner",
+    "rd.bigger": "Größer",
+    "rd.fit": "Breite",
+    "rd.done": "Gelesen",
+    "rd.at": "Seite {page} von {total}",
+    "dd.many": "{n} Dokumente",
+    "dd.moved": "{n} Dokumente verschoben nach {folder}.",
     "err.locked": "Wird gerade von {by} bearbeitet.",
     "err.lock required": "Die Bearbeitungssperre fehlt. Bitte „Bearbeiten“ erneut wählen.",
     "err.page changed meanwhile": "Die Seite wurde inzwischen an anderer Stelle geändert. Kopiere deinen Text, lade die Seite neu und füge ihn wieder ein.",
@@ -242,6 +322,31 @@ const I18N = {
     "zoom.tip": "Schriftgröße (Doppelklick: zurück auf 100 %)",
     "width.tip": "Lesebreite (Doppelklick: zurück auf 85 %)",
     "trash.title": "Papierkorb",
+    "in.title": "Eingang",
+    "in.drop": "PDFs hierher ziehen oder hier tippen zum Auswählen",
+    "in.dropall": "Loslassen – ab in den Eingang",
+    "in.where": "Oder in den Ordner „{folder}“ der Wissen!-Freigabe legen (auch über kDrive). Ein Unterordner mit dem Namen eines Bereichs gibt den Ablageort vor, z. B. „zeitschriften/Holzwerken“. Fotos werden zu PDFs.",
+    "in.empty": "Der Eingang ist leer.",
+    "in.uploading": "Lade {n} von {total} hoch …",
+    "in.uploaded": "{n} Datei(en) im Eingang.",
+    "in.file": "Ablegen …",
+    "in.file.title": "Ablegen: {name}",
+    "in.file.ok": "Ablegen",
+    "in.filed": "Abgelegt: {title}",
+    "in.open": "Öffnen",
+    "in.ai": "KI fragen",
+    "in.ai.busy": "KI liest …",
+    "in.delete": "Löschen",
+    "in.delete.q": "„{name}“ endgültig löschen?",
+    "in.delete.hint": "Die Datei ist noch nicht im Archiv. Sie wird aus dem Eingang gelöscht und landet nicht im Papierkorb.",
+    "in.deleted": "Gelöscht: {name}",
+    "in.dup": "Schon im Archiv: {path}",
+    "in.dup.force": "Trotzdem ablegen",
+    "in.nowhere": "noch kein Ort",
+    "in.sugg.ai": "Vorschlag der KI",
+    "in.ai.failed": "KI ohne Antwort – „KI fragen“ versucht es neu",
+    "ai.inboxauto.label": "Eingang automatisch vorsortieren",
+    "ai.inboxauto.hint": "Fragt die KI von selbst nach Bereich, Ordner und Titel für jede neue Datei im Eingang, außer ein Unterordner gibt den Ort schon vor. Abgelegt wird weiter erst, wenn du es bestätigst.",
     "trash.open": "Papierkorb",
     "trash.empty": "Der Papierkorb ist leer.",
     "trash.note": "Was hier liegt, wird nach {days} Tagen endgültig gelöscht.",
@@ -553,6 +658,14 @@ const I18N = {
     "list.recursive": "include subfolders",
     "list.empty": "No documents.",
     "list.more": "Load more",
+    "shelf.list": "List",
+    "shelf.shelf": "Shelf",
+    "shelf.switch": "Show this folder as a list or as a shelf of covers",
+    "shelf.sort": "Order on the shelf",
+    "shelf.sort.titleasc": "Title A–Z",
+    "shelf.sort.titledesc": "Title Z–A",
+    "shelf.sort.datedesc": "Newest first",
+    "shelf.sort.dateasc": "Oldest first",
     "col.date": "Date",
     "col.title": "Title",
     "col.area": "Area",
@@ -660,6 +773,57 @@ const I18N = {
     "dm.open": "Open",
     "dm.download": "Download",
     "dm.folder": "Show in the folder tree",
+    "toc.btn": "Contents",
+    "toc.title": "Contents",
+    "toc.none": "This issue has no table of contents yet.",
+    "toc.make": "Make with AI",
+    "toc.redo": "Make again",
+    "toc.busy": "The AI leafs through “{title}” …",
+    "toc.all": "Make contents",
+    "toc.all.tip": "Tables of contents for every issue on this shelf that has none yet (AI)",
+    "toc.all.none": "Every issue here has a table of contents already.",
+    "toc.all.q": "Make a table of contents for {n} issues? That costs about {cost} and takes around half a minute per issue.",
+    "toc.all.busy": "Contents {n} of {total}: {title} …",
+    "toc.all.done": "{n} tables of contents made.",
+    "toc.all.stopped": "Stopped after {n} issues:",
+    "mt.menu": "Maintenance to Vikunja",
+    "mt.title": "Maintenance: {title}",
+    "mt.busy": "The AI picks out the maintenance work …",
+    "mt.none": "The AI found no recurring maintenance in this document.",
+    "mt.intro": "Tick what you want in Vikunja. Interval and first date can be changed; without an interval it becomes a one-off task.",
+    "mt.every": "every",
+    "mt.first": "first on",
+    "mt.u.d": "days",
+    "mt.u.w": "weeks",
+    "mt.u.m": "months",
+    "mt.u.y": "years",
+    "mt.create": "Create in Vikunja",
+    "mt.done": "{n} task(s) created in Vikunja.",
+    "mt.open": "Open in Vikunja",
+    "vk.title": "Tasks in Vikunja",
+    "vk.url": "Address",
+    "vk.token": "API token",
+    "vk.project": "Project for the tasks",
+    "vk.save": "Save and check",
+    "vk.token.set": "A token is stored. Leave empty to keep it.",
+    "vk.token.none": "No token stored yet.",
+    "vk.project.pick": "– choose a project –",
+    "vk.ok": "Connected. Maintenance goes to the chosen project.",
+    "vk.pick": "Connected – now choose the project.",
+    "vk.hint": "Maintenance from manuals and cheat sheets becomes recurring tasks in Vikunja (menu ⋯ → “Maintenance to Vikunja”). Create the token in Vikunja under Settings → API tokens, allowed to create tasks and read projects.",
+    "cs.menu": "Cheat sheet (AI)",
+    "cs.busy": "The AI reads “{title}” and writes a cheat sheet – this takes about half a minute …",
+    "qr.title": "QR sticker",
+    "qr.label": "Caption",
+    "qr.page": "Open at page (empty = where you left off)",
+    "qr.size": "Size",
+    "qr.small": "Small (25 mm)",
+    "qr.medium": "Medium (40 mm)",
+    "qr.large": "Large (60 mm)",
+    "qr.copy": "Copy link",
+    "qr.copied": "Link copied.",
+    "qr.print": "Print",
+    "qr.popup": "The print window was blocked – please allow pop-ups for Wissen!.",
     "start.pinned": "Pinned",
     "start.recent": "Last changed",
     "start.all": "All documents →",
@@ -708,6 +872,16 @@ const I18N = {
     "tr.back": "“{title}” is back.",
     "rn.done": "Renamed to “{title}”.",
     "mv.done": "Moved to {folder}.",
+    "rd.loading": "Loading PDF …",
+    "rd.of": "of {n}",
+    "rd.page": "Page",
+    "rd.smaller": "Smaller",
+    "rd.bigger": "Larger",
+    "rd.fit": "Fit",
+    "rd.done": "Read",
+    "rd.at": "Page {page} of {total}",
+    "dd.many": "{n} documents",
+    "dd.moved": "{n} documents moved to {folder}.",
     "err.locked": "Being edited by {by} right now.",
     "err.lock required": "The editing lock is missing. Please choose “Edit” again.",
     "err.page changed meanwhile": "The page was changed elsewhere meanwhile. Copy your text, reload the page and paste it again.",
@@ -756,6 +930,31 @@ const I18N = {
     "zoom.tip": "Text size (double click: back to 100 %)",
     "width.tip": "Reading width (double click: back to 85 %)",
     "trash.title": "Trash",
+    "in.title": "Inbox",
+    "in.drop": "Drop PDFs here or tap to choose",
+    "in.dropall": "Let go – into the inbox",
+    "in.where": "Or put them into the folder “{folder}” of the Wissen! share (kDrive and the like work too). A subfolder named like an area sets where it goes, e.g. “manuals/Kitchen”. Photos become PDFs.",
+    "in.empty": "The inbox is empty.",
+    "in.uploading": "Uploading {n} of {total} …",
+    "in.uploaded": "{n} file(s) in the inbox.",
+    "in.file": "File …",
+    "in.file.title": "File: {name}",
+    "in.file.ok": "File",
+    "in.filed": "Filed: {title}",
+    "in.open": "Open",
+    "in.ai": "Ask AI",
+    "in.ai.busy": "AI is reading …",
+    "in.delete": "Delete",
+    "in.delete.q": "Delete “{name}” for good?",
+    "in.delete.hint": "The file is not in the archive yet. It is deleted from the inbox and does not go to the trash.",
+    "in.deleted": "Deleted: {name}",
+    "in.dup": "Already in the archive: {path}",
+    "in.dup.force": "File anyway",
+    "in.nowhere": "no place yet",
+    "in.sugg.ai": "Suggested by the AI",
+    "in.ai.failed": "No answer from the AI – “Ask AI” tries again",
+    "ai.inboxauto.label": "Sort the inbox automatically",
+    "ai.inboxauto.hint": "Asks the AI by itself for area, folder and title of every new file in the inbox, unless a subfolder already says where it goes. Filing still waits for your confirmation.",
     "trash.open": "Trash",
     "trash.empty": "The trash is empty.",
     "trash.note": "What lies here is deleted for good after {days} days.",
@@ -1112,6 +1311,9 @@ const State = {
   sel: new Set(),     // ids ticked in the list
   tagList: [],        // [{name, count}]
   pins: [],           // documents pinned to the start page, in their order
+  shelves: new Set(), // folders shown as a shelf of covers (follows the account)
+  shelfSort: store.get('shelfSort', 'title:desc'),  // own order on a shelf: highest issue number first
+  reading: {},        // PDF id -> {page, total, done}: how far this account got (follows the account)
 };
 
 const $ = id => document.getElementById(id);
@@ -1188,6 +1390,7 @@ async function showApp() {
   }
   document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !State.me.is_admin; });
   setView({ zoom: State.me.zoom, width: State.me.width }, false);      // as this account left it
+  State.shelves = new Set(State.me.shelves || []);
   for (const id of ['btn-new', 'start-new']) $(id).hidden = !(State.me.write_areas || []).length;
   const areas = await api('areas');
   State.areas = areas;
@@ -1200,7 +1403,8 @@ async function showApp() {
   if (!location.hash || location.hash === '#') history.replaceState(null, '', '#/start');
   route();
   await loadOpen();
-  await Promise.all([loadTree(), loadDocs(), loadStatus(), loadTags(), loadPins().catch(() => null)]);
+  await Promise.all([loadTree(), loadReading(), loadStatus(), loadTags(), loadPins().catch(() => null)]);
+  await loadDocs();
   loadUpdate();
 }
 
@@ -1269,6 +1473,7 @@ function addNode(box, node, depth) {
     ev.stopPropagation();
     toggleOpen(node.path);
   });
+  dropTarget(row, node, hasKids && depth > 0 && !isOpen);
   row.addEventListener('click', () => {
     if (hasKids && depth > 0 && State.folder === node.path) { toggleOpen(node.path); return; }
     if (hasKids && depth > 0) State.open.add(node.path);
@@ -1367,8 +1572,8 @@ async function loadDocs(append = false) {
     'tags=' + encodeURIComponent([...State.tags].join(',')),
     'kind=' + State.kind,
     'q=' + encodeURIComponent(State.query),
-    'sort=' + (bestFirst() ? 'relevance' : State.sort),
-    'desc=' + State.desc,
+    'sort=' + (showsShelf() ? State.shelfSort.split(':')[0] : bestFirst() ? 'relevance' : State.sort),
+    'desc=' + (showsShelf() ? State.shelfSort.endsWith(':desc') : State.desc),
     'limit=' + PAGE,
     'offset=' + offset,
   ].join('&');
@@ -1421,6 +1626,23 @@ function renderList() {
     ? t('count.of', { n: State.items.length, total: State.total })
     : t('status.docs', { n: State.total });
 
+  const shelf = showsShelf();
+  $('view-switch').hidden = searching;
+  $('view-switch').querySelectorAll('[data-view]').forEach(b =>
+    b.setAttribute('aria-pressed', String((b.dataset.view === 'shelf') === shelf)));
+  $('doc-table').hidden = shelf;
+  $('doc-shelf').hidden = !shelf;
+  $('shelf-sort').hidden = !shelf;
+  $('shelf-toc').hidden = !shelf || !(State.status && State.status.ask) || !State.items.some(d => d.ext === 'pdf' && canWrite(d));
+  if (shelf) {
+    $('doc-rows').innerHTML = '';
+    renderShelf(searching || State.recursive);
+    renderBulk();
+    $('list-empty').hidden = State.items.length > 0;
+    $('btn-more').hidden = State.items.length >= State.total;
+    return;
+  }
+  $('doc-shelf').innerHTML = '';
   const rows = $('doc-rows');
   rows.innerHTML = '';
   const showFolder = searching || State.recursive;
@@ -1447,6 +1669,7 @@ function renderList() {
     });
     tr.querySelector('.col-check').addEventListener('click', ev => ev.stopPropagation());
     tr.addEventListener('click', () => openPreview(doc));
+    draggableDoc(tr, doc);
     const menuBtn = tr.querySelector('.doc-menu');
     menuBtn.addEventListener('click', ev => { ev.stopPropagation(); docMenu(menuBtn, doc); });
     tr.querySelector('.col-menu').addEventListener('click', ev => ev.stopPropagation());
@@ -1455,6 +1678,172 @@ function renderList() {
   renderBulk();
   $('list-empty').hidden = State.items.length > 0;
   $('btn-more').hidden = State.items.length >= State.total;
+}
+
+// ---------------------------------------------------------------- shelf
+// A folder can show its documents as covers (first page) instead of rows – for magazines and
+// the like. Which folders do is kept with the account; a search always shows the list.
+
+function showsShelf() {
+  return !State.query.trim() && !State.tags.size && State.shelves.has(State.folder);
+}
+
+async function setShelf(on) {
+  const folder = State.folder;
+  if (on === State.shelves.has(folder)) return;
+  if (on) State.shelves.add(folder); else State.shelves.delete(folder);
+  loadDocs();      // the shelf keeps its own order
+  try {
+    const r = await api('me/shelf', { method: 'PUT', body: JSON.stringify({ folder, shelf: on }) });
+    State.shelves = new Set(r.shelves);
+  } catch (e) {
+    if (on) State.shelves.delete(folder); else State.shelves.add(folder);
+    loadDocs();
+    toast(esc(errText(e)));
+  }
+}
+
+function setShelfSort(value) {
+  State.shelfSort = value;
+  store.set('shelfSort', value);
+  loadDocs();
+}
+
+function renderShelf(showFolder) {
+  const box = $('doc-shelf');
+  $('shelf-sort').value = State.shelfSort;
+  box.innerHTML = '';
+  for (const doc of State.items) {
+    const card = document.createElement('div');
+    card.className = 'shelf-card' + (State.selected && State.selected.id === doc.id ? ' is-selected' : '');
+    const cover = doc.ext === 'pdf'
+      ? `<img src="api/documents/${esc(doc.id)}/thumb?v=${esc((doc.sha256 || '').slice(0, 12))}" alt="" loading="lazy" decoding="async">`
+      : `<span class="shelf-card__none" aria-hidden="true">¶</span>`;
+    const sub = [formatDate(doc.date), showFolder && doc.folder !== State.folder ? (doc.folder || t('tree.root')) : '']
+      .filter(Boolean).map(esc).join(' · ');
+    card.innerHTML =
+      `<button type="button" class="shelf-card__open" title="${esc(doc.title)}">` +
+        `<span class="shelf-card__cover">${cover}</span>` +
+        `<span class="shelf-card__title">${esc(doc.title)}</span>` +
+        (sub ? `<span class="shelf-card__sub">${sub}</span>` : '') +
+      `</button>` +
+      `<button type="button" class="doc-menu" title="${esc(t('dm.menu'))}" aria-label="${esc(t('dm.menu'))}">⋯</button>`;
+    const img = card.querySelector('img');
+    if (img) img.addEventListener('error', () => {
+      img.replaceWith(Object.assign(document.createElement('span'), { className: 'shelf-card__none', textContent: 'PDF' }));
+    }, { once: true });
+    card.querySelector('.shelf-card__open').addEventListener('click', () => {
+      if (doc.ext === 'pdf') location.hash = '#/pdf/' + doc.id; else openPreview(doc);
+    });
+    const read = State.reading[doc.id];
+    if (read) {
+      const coverBox = card.querySelector('.shelf-card__cover');
+      if (read.done) coverBox.insertAdjacentHTML('beforeend', `<span class="shelf-card__done" title="${esc(t('rd.done'))}">✓</span>`);
+      else if (read.total > 1 && read.page > 1) coverBox.insertAdjacentHTML('beforeend',
+        `<span class="shelf-card__progress" title="${esc(t('rd.at', { page: read.page, total: read.total }))}"><span style="width:${Math.round(100 * read.page / read.total)}%"></span></span>`);
+    }
+    if (img) img.draggable = false;       // the card is dragged, not the picture (that would look like a file)
+    draggableDoc(card, doc);
+    const menuBtn = card.querySelector('.doc-menu');
+    menuBtn.addEventListener('click', ev => { ev.stopPropagation(); docMenu(menuBtn, doc); });
+    box.appendChild(card);
+  }
+}
+
+// ------------------------------------------------------- move by dragging
+// Rows of the list and covers on the shelf can be dragged onto a folder of the tree. Ticked
+// documents go together when one of them is dragged. A document stays in its area unless the
+// target folder exists only in one other area it may write to.
+
+const DRAG_TYPE = 'application/x-wissen-docs';
+let dragDocs = null;
+let dragOpenTimer = null;
+
+function draggableDoc(el, doc) {
+  if (!canWrite(doc)) return;
+  el.draggable = true;
+  el.addEventListener('dragstart', ev => {
+    const many = State.sel.has(doc.id) ? State.items.filter(d => State.sel.has(d.id) && canWrite(d)) : [doc];
+    dragDocs = many;
+    ev.dataTransfer.effectAllowed = 'move';
+    ev.dataTransfer.setData(DRAG_TYPE, many.map(d => d.id).join(','));
+    ev.dataTransfer.setData('text/plain', many.map(d => d.title).join('\n'));
+    const ghost = $('drag-ghost');
+    ghost.textContent = many.length > 1 ? t('dd.many', { n: many.length }) : doc.title;
+    ev.dataTransfer.setDragImage(ghost, 12, 12);
+    document.body.classList.add('is-dragging-docs');
+  });
+  el.addEventListener('dragend', endDocDrag);
+}
+
+function endDocDrag() {
+  dragDocs = null;
+  clearTimeout(dragOpenTimer);
+  document.body.classList.remove('is-dragging-docs');
+  document.querySelectorAll('.tree-row.is-drop').forEach(r => r.classList.remove('is-drop'));
+}
+
+function dropTarget(row, node, closed) {
+  row.addEventListener('dragenter', ev => {
+    if (!dragDocs) return;
+    ev.preventDefault();
+    row.classList.add('is-drop');
+    clearTimeout(dragOpenTimer);
+    if (closed) dragOpenTimer = setTimeout(() => { State.open.add(node.path); saveOpen(); renderTree(); }, 700);
+  });
+  row.addEventListener('dragover', ev => {
+    if (!dragDocs) return;
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = 'move';
+    row.classList.add('is-drop');
+  });
+  row.addEventListener('dragleave', ev => {
+    if (row.contains(ev.relatedTarget)) return;
+    row.classList.remove('is-drop');
+    clearTimeout(dragOpenTimer);
+  });
+  row.addEventListener('drop', ev => {
+    if (!dragDocs) return;
+    ev.preventDefault();
+    const docs = dragDocs;
+    endDocDrag();
+    moveByDrop(docs, node);
+  });
+}
+
+function dropArea(doc, node) {
+  if (!node.path || node.areas.includes(doc.area)) return doc.area;
+  const other = node.areas.filter(a => (State.me.write_areas || []).includes(a));
+  return other.length === 1 ? other[0] : doc.area;
+}
+
+async function moveByDrop(docs, node) {
+  const back = [];
+  const errors = [];
+  let last = null;
+  for (const doc of docs) {
+    const area = dropArea(doc, node);
+    if (area === doc.area && (doc.folder || '') === node.path) continue;
+    try {
+      last = await api(`documents/${doc.id}/move`, { method: 'POST', body: JSON.stringify({ folder: node.path, area }) });
+      back.push({ id: last.id, area: doc.area, folder: doc.folder || '' });
+    } catch (e) { errors.push(`${doc.title}: ${errText(e)}`); }
+  }
+  if (errors.length) toast(esc(errors.join(' · ')), null, 15000);
+  if (!back.length) return;
+  State.sel.clear();
+  const place = [areaLabel(last.area), ...(last.folder ? last.folder.split('/') : [])].join(' › ');
+  if (!errors.length) {
+    toast(esc(back.length > 1 ? t('dd.moved', { n: back.length, folder: place }) : t('mv.done', { folder: place })),
+      { label: t('tb.undo'), run: async () => {
+        for (const b of back) {
+          try { await api(`documents/${b.id}/move`, { method: 'POST', body: JSON.stringify({ folder: b.folder, area: b.area }) }); }
+          catch (e) { toast(esc(errText(e))); }
+        }
+        afterChange(null);
+      } });
+  }
+  afterChange(null);
 }
 
 // --------------------------------------------------------------- layout
@@ -1580,8 +1969,8 @@ function openPreview(doc) {
     loadTags();
     return r.tags;
   });
-  $('pv-open').href = doc.ext === 'md' ? `#/seite/${doc.id}` : url;
-  if (doc.ext === 'md') $('pv-open').removeAttribute('target'); else { $('pv-open').target = '_blank'; $('pv-open').rel = 'noopener'; }
+  $('pv-open').href = doc.ext === 'md' ? `#/seite/${doc.id}` : doc.ext === 'pdf' ? `#/pdf/${doc.id}` : url;
+  if (doc.ext === 'md' || doc.ext === 'pdf') $('pv-open').removeAttribute('target'); else { $('pv-open').target = '_blank'; $('pv-open').rel = 'noopener'; }
   $('pv-download').href = url + '?download=true';
   paintPin($('pv-pin'), doc);
   $('pv-pin').onclick = () => togglePin(doc);
@@ -1612,6 +2001,7 @@ async function loadStatus() {
     const s = await api('status');
     State.status = s;
     paintAskButton();
+    paintInboxCount(s.inbox);
     const time = s.last_scan ? new Date(s.last_scan).toLocaleString(LANG, { dateStyle: 'short', timeStyle: 'short' }) : '–';
     const texts = s.texts && s.texts.done < s.texts.total ? ' · ' + t('status.texts', s.texts) : '';
     $('status').textContent = s.scanning && !s.last_scan
@@ -1640,16 +2030,25 @@ function route() {
   const inSettings = !!m;
   const start = /^#\/start/.test(location.hash);
   const trash = /^#\/papierkorb/.test(location.hash);
+  const inbox = /^#\/eingang/.test(location.hash);
+  const pdf = location.hash.match(/^#\/pdf\/([0-9a-z]{6,64})(?:\/(\d+))?/);
+  const link = location.hash.match(/^#\/dokument\/([0-9a-z]{6,64})(?:\/(\d+))?/);
+  if (link) { openLink(link[1], link[2]); return; }
   $('settings').hidden = !inSettings;
   $('pagepage').hidden = !page;
   $('startpage').hidden = !start;
   $('trashpage').hidden = !trash;
-  const other = inSettings || !!page || start || trash;
+  $('inboxpage').hidden = !inbox;
+  $('pdfpage').hidden = !pdf;
+  if (!pdf) closeReader();
+  const other = inSettings || !!page || start || trash || inbox || !!pdf;
   $('archive-toolbar').hidden = other;
   $('archive-layout').hidden = other;
   if (page) { openPageView(page[1], page[2] ? safeDecode(page[2]) : ''); return; }
   if (start) { loadStart(); return; }
   if (trash) { loadTrash(); return; }
+  if (inbox) { loadInbox(); return; }
+  if (pdf) { openReader(pdf[1], pdf[2] ? Number(pdf[2]) : 0); return; }
   if (!inSettings) return;
   let pane = PANES[m && m[1]] || 'general';
   if (ADMIN_PANES.has(pane) && !State.me.is_admin) pane = 'general';
@@ -1665,7 +2064,7 @@ function showPane(pane) {
   if (pane === 'account') loadAccountSecurity();
   if (pane === 'security') loadSecurity();
   if (pane === 'general') $('set-theme').value = theme;
-  if (pane === 'connections') { loadApiKey(); loadMcp(); }
+  if (pane === 'connections') { loadApiKey(); loadMcp(); loadVikunja(); }
   if (pane === 'ai') loadAI();
   if (pane === 'about') loadAbout();
   if (pane === 'storage') loadStorage();
@@ -2313,6 +2712,7 @@ async function loadAI() {
   fillModels(aiConfig.models.map(m => ({ ...m })), aiConfig.model);
   loadModels();
   $('ai-limit').value = aiConfig.monthly_limit_usd;
+  $('ai-inbox-auto').checked = !!aiConfig.inbox_auto;
   $('ai-key').value = '';
   $('ai-msg').textContent = '';
   const box = $('ai-exclude');
@@ -2386,6 +2786,7 @@ function aiPayload() {
     model: currentModel(),
     monthly_limit_usd: Number($('ai-limit').value || 0),
     excluded_areas: [...$('ai-exclude').querySelectorAll('input:checked')].map(i => i.value),
+    inbox_auto: $('ai-inbox-auto').checked,
   };
   if ($('ai-key').value.trim()) body.api_key = $('ai-key').value.trim();
   return body;
@@ -2539,10 +2940,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   $('btn-more').addEventListener('click', () => loadDocs(true));
+  $('view-switch').querySelectorAll('[data-view]').forEach(b =>
+    b.addEventListener('click', () => setShelf(b.dataset.view === 'shelf')));
+  $('shelf-sort').addEventListener('change', ev => setShelfSort(ev.target.value));
   window.addEventListener('hashchange', route);
   $('st-form').addEventListener('submit', saveStorage);
   initPicker();
   initTags();
+  initInbox();
+  initReader();
+  initQr();
+  initToc();
+  $('vk-save').addEventListener('click', saveVikunja);
+  $('vk-project').addEventListener('change', saveVikunja);
   $('settings').addEventListener('click', ev => {
     const btn = ev.target.closest('[data-pick]');
     if (btn) showPicker(btn.dataset.pick);
@@ -2906,6 +3316,7 @@ function ask({ title, text = '', ok, fields = [], run }) {
       input = document.createElement('input');
       input.autocomplete = 'off';
       if (f.placeholder) input.placeholder = f.placeholder;
+      if (f.list) input.setAttribute('list', f.list);
     }
     input.className = 'fd-input';
     input.id = 'askf-' + f.key;
@@ -3079,12 +3490,184 @@ async function askArchive() {
 // a page opens in the reading view, a PDF at the page the passage stands on
 function openSource(s) {
   if (s.ext === 'md') { location.hash = '#/seite/' + s.id; return; }
-  window.open(`api/documents/${s.id}/file${s.page ? '#page=' + s.page : ''}`, '_blank', 'noopener');
+  location.hash = `#/pdf/${s.id}${s.page ? '/' + s.page : ''}`;
 }
 
 // ------------------------------------------------- trash
 
 const when = iso => new Date(iso).toLocaleString(LANG, { dateStyle: 'medium', timeStyle: 'short' });
+
+// ---------------------------------------------------------------- inbox
+// "_Eingang" next to the areas: files dropped here (or onto the share, or via kDrive) wait until
+// someone files them. Area and folder come from the subfolder they sit in, the title from the name.
+
+function paintInboxCount(n) {
+  document.querySelectorAll('.inbox-link').forEach(a => { a.hidden = n === null || n === undefined; });
+  document.querySelectorAll('.inbox-badge').forEach(b => { b.hidden = !n; b.textContent = n || ''; });
+}
+
+let inboxItems = [];
+let inboxAuto = false;
+let inboxPoll = null;
+let inboxPolls = 0;
+
+async function loadInbox() {
+  document.title = t('in.title') + ' – Wissen!';
+  let data;
+  try { data = await api('inbox'); } catch (e) { toast(esc(errText(e))); return; }
+  inboxItems = data.items;
+  inboxAuto = data.auto;
+  // with the automatic AI on, files nobody placed yet get their suggestion within a minute: look again
+  clearTimeout(inboxPoll);
+  const waiting = inboxAuto && inboxItems.some(aiPending);
+  if (waiting && inboxPolls < 20 && location.hash.startsWith('#/eingang')) {
+    inboxPolls++;
+    inboxPoll = setTimeout(() => { if (location.hash.startsWith('#/eingang')) loadInbox(); }, 6000);
+  } else if (!waiting) inboxPolls = 0;
+  $('in-where').textContent = t('in.where', { folder: data.folder });
+  paintInboxCount(data.items.length);
+  renderInbox();
+  try {          // folders of the areas one may write to, offered while typing the folder
+    const tree = await api('tree?areas=' + encodeURIComponent(data.areas.join(',')));
+    const paths = [];
+    const walk = node => { (node.children || []).forEach(c => { paths.push(c.path); walk(c); }); };
+    walk(tree);
+    $('in-folders').innerHTML = [...new Set(paths)].sort((a, b) => a.localeCompare(b, LANG, { numeric: true }))
+      .map(f => `<option value="${esc(f)}"></option>`).join('');
+  } catch { /* typing still works */ }
+}
+
+const aiPending = item => !item.suggestion.ai && !item.suggestion.area && !item.ai_failed;
+
+function placeOf(s) {
+  if (!s || !s.area) return t('in.nowhere');
+  return [areaLabel(s.area), ...(s.folder ? s.folder.split('/') : [])].join(' › ');
+}
+
+function renderInbox() {
+  const box = $('in-items');
+  box.innerHTML = '';
+  for (const item of inboxItems) {
+    const s = item.suggestion;
+    const card = document.createElement('div');
+    card.className = 'in-card';
+    card.innerHTML =
+      `<a class="in-card__cover" href="api/inbox/${esc(item.key)}/file" target="_blank" rel="noopener" title="${esc(t('in.open'))}">` +
+        `<img src="api/inbox/${esc(item.key)}/thumb" alt="" loading="lazy" decoding="async"></a>` +
+      `<div class="in-card__body">` +
+        `<div class="in-card__title">${esc(s.title)}</div>` +
+        `<div class="in-card__place">${s.area ? `<span class="area-dot" style="--dot:${areaColor(s.area)}"></span>` : ''}` +
+          `<span>${esc(placeOf(s))}</span>${s.ai ? ` <span class="in-card__ai">${esc(t('in.sugg.ai'))}</span>`
+            : inboxAuto && aiPending(item) ? ` <span class="in-card__ai in-card__ai--wait">${esc(t('in.ai.busy'))}</span>`
+            : item.ai_failed ? ` <span class="in-card__ai in-card__ai--fail">${esc(t('in.ai.failed'))}</span>` : ''}</div>` +
+        `<div class="in-card__meta">${esc(item.rel)} · ${esc(formatSize(item.size))} · ${esc(new Date(item.added).toLocaleString(LANG, { dateStyle: 'short', timeStyle: 'short' }))}</div>` +
+        (item.duplicate ? `<div class="in-card__dup">${esc(t('in.dup', { path: item.duplicate }))}</div>` : '') +
+        `<div class="in-card__actions">` +
+          `<button type="button" class="fd-button fd-button--emphasized" data-k="file">${esc(t('in.file'))}</button>` +
+          (State.status && State.status.ask ? `<button type="button" class="fd-button" data-k="ai">${esc(t('in.ai'))}</button>` : '') +
+          `<button type="button" class="fd-button fd-button--transparent trash-purge" data-k="delete">${esc(t('in.delete'))}</button>` +
+        `</div>` +
+      `</div>`;
+    const img = card.querySelector('img');
+    img.addEventListener('error', () => {
+      img.replaceWith(Object.assign(document.createElement('span'), { className: 'shelf-card__none', textContent: 'PDF' }));
+    }, { once: true });
+    card.querySelector('[data-k=file]').addEventListener('click', () => fileInboxItem(item));
+    card.querySelector('[data-k=ai]')?.addEventListener('click', ev => askInboxAI(item, ev.currentTarget));
+    card.querySelector('[data-k=delete]').addEventListener('click', () => deleteInboxItem(item));
+    box.appendChild(card);
+  }
+  $('in-empty').hidden = inboxItems.length > 0;
+}
+
+function formatSize(bytes) {
+  return bytes >= 1048576 ? (bytes / 1048576).toLocaleString(LANG, { maximumFractionDigits: 1 }) + ' MB'
+    : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+}
+
+async function fileInboxItem(item) {
+  const s = item.suggestion;
+  const areas = writeAreas();
+  if (!areas.length) return;
+  const area = areas.some(a => a.name === s.area) ? s.area : (areas.find(a => State.active.has(a.name)) || areas[0]).name;
+  const fields = [{ key: 'title', label: t('new.title'), value: s.title }];
+  if (areas.length > 1) fields.push({ key: 'area', label: t('new.area'), value: area, options: areas.map(a => ({ value: a.name, label: areaLabel(a.name) })) });
+  fields.push({ key: 'folder', label: t('new.folder'), value: s.folder, placeholder: t('new.folder.ph'), list: 'in-folders' });
+  const send = (v, force) => api(`inbox/${item.key}/file`, { method: 'POST',
+    body: JSON.stringify({ area: v.area || area, folder: v.folder, title: v.title, force }) });
+  const done = await ask({ title: t('in.file.title', { name: item.name }), ok: item.duplicate ? t('in.dup.force') : t('in.file.ok'),
+    text: item.duplicate ? t('in.dup', { path: item.duplicate }) : '', fields, run: v => send(v, !!item.duplicate) });
+  if (!done) return;
+  toast(esc(t('in.filed', { title: done.title })), { label: t('in.open'), run: () => { location.hash = '#/'; selectFolder(done.folder || ''); } });
+  refreshArchive();
+  loadInbox();
+}
+
+async function askInboxAI(item, btn) {
+  btn.disabled = true;
+  btn.textContent = t('in.ai.busy');
+  try {
+    await api(`inbox/${item.key}/ai`, { method: 'POST' });
+    await loadInbox();              // the server keeps the answer: it stays after reloading and filing
+  } catch (e) {
+    toast(esc(errText(e)));
+    btn.disabled = false;
+    btn.textContent = t('in.ai');
+  }
+}
+
+async function deleteInboxItem(item) {
+  const done = await ask({ title: t('in.delete.q', { name: item.name }), text: t('in.delete.hint'), ok: t('in.delete'),
+    run: () => api(`inbox/${item.key}`, { method: 'DELETE' }) });
+  if (!done) return;
+  toast(esc(t('in.deleted', { name: item.name })));
+  loadInbox();
+}
+
+async function uploadToInbox(files) {
+  files = [...files].filter(f => f.size > 0);
+  if (!files.length) return;
+  if (location.hash !== '#/eingang') location.hash = '#/eingang';
+  const busy = $('in-busy');
+  let ok = 0;
+  try {
+    for (const [i, f] of files.entries()) {
+      busy.hidden = false;
+      busy.textContent = t('in.uploading', { n: i + 1, total: files.length });
+      try {
+        const res = await fetch('api/inbox/upload?name=' + encodeURIComponent(f.name), {
+          method: 'POST', body: f, credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/octet-stream' } });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+        ok++;
+      } catch (e) { toast(esc(`${f.name}: ${errText(e)}`)); }
+    }
+  } finally { busy.hidden = true; }
+  if (ok) toast(esc(t('in.uploaded', { n: ok })), null, 4000);
+  loadInbox();
+}
+
+function initInbox() {
+  $('in-files').addEventListener('change', ev => { uploadToInbox(ev.target.files); ev.target.value = ''; });
+  const drop = $('in-drop');
+  // files dragged anywhere onto the window go to the inbox – for anyone who may file somewhere
+  const veil = $('drop-veil');
+  // while a page is being edited, a dropped picture belongs to the page (the editor takes it)
+  const canDrop = ev => State.me && !Edit.on && !dragDocs && (State.me.write_areas || []).length
+    && [...(ev.dataTransfer?.types || [])].includes('Files');
+  let depth = 0;
+  window.addEventListener('dragenter', ev => { if (!canDrop(ev)) return; depth++; veil.hidden = false; drop.classList.add('is-over'); });
+  window.addEventListener('dragleave', ev => { if (!canDrop(ev)) return; if (--depth <= 0) { depth = 0; veil.hidden = true; drop.classList.remove('is-over'); } });
+  window.addEventListener('dragover', ev => { if (canDrop(ev)) ev.preventDefault(); });
+  window.addEventListener('drop', ev => {
+    if (!canDrop(ev) || ev.defaultPrevented) return;
+    ev.preventDefault();
+    depth = 0;
+    veil.hidden = true;
+    drop.classList.remove('is-over');
+    uploadToInbox(ev.dataTransfer.files);
+  });
+}
 
 async function loadTrash() {
   document.title = t('trash.title') + ' – Wissen!';
@@ -3694,6 +4277,11 @@ function docMenu(anchor, doc) {
     `<a role="menuitem" href="${esc(url)}?download=true">${esc(t('dm.download'))}</a>` +
     `<button type="button" role="menuitem" data-k="folder">${esc(t('dm.folder'))}</button>` +
     `<button type="button" role="menuitem" data-k="pin">${esc(t(isPinned(doc) ? 'pin.off' : 'pin.on'))}</button>` +
+    `<button type="button" role="menuitem" data-k="qr">${esc(t('qr.title'))}</button>` +
+    (doc.ext === 'pdf' && canWrite(doc) && State.status && State.status.ask
+      ? `<button type="button" role="menuitem" data-k="cheat">${esc(t('cs.menu'))}</button>` : '') +
+    (State.status && State.status.vikunja && State.status.ask
+      ? `<button type="button" role="menuitem" data-k="maint">${esc(t('mt.menu'))}</button>` : '') +
     (doc.ext === 'md' ? `<button type="button" role="menuitem" data-k="versions">${esc(t('ver.menu'))}</button>` : '') +
     (canWrite(doc) ? (doc.ext === 'md' ? `<button type="button" role="menuitem" data-k="edit">${esc(t('dm.editpage'))}</button>` : '') +
       `<button type="button" role="menuitem" data-k="rename">${esc(t('dm.rename'))}</button>` +
@@ -3712,6 +4300,9 @@ function docMenu(anchor, doc) {
     removeEventListener('pointerdown', close, true);
     const k = el.dataset.k;
     if (k === 'pin') togglePin(doc);
+    if (k === 'qr') openQr(doc);
+    if (k === 'cheat') makeCheatsheet(doc);
+    if (k === 'maint') openMaintenance(doc);
     if (k === 'edit') {
       if (Page.doc && Page.doc.id === doc.id && !$('pagepage').hidden) startEdit();
       else { Edit.auto = doc.id; location.hash = '#/seite/' + doc.id; }
@@ -3727,6 +4318,517 @@ function docMenu(anchor, doc) {
   });
 }
 
+
+
+// ------------------------------------------------------------ cheat sheet
+// The AI reads a manual and writes "<Titel> – Spickzettel" next to it: maintenance, error codes,
+// spare parts, values – each with a link that opens the reader at the page.
+
+let cheatBusy = false;
+
+async function makeCheatsheet(doc) {
+  if (cheatBusy) return;
+  cheatBusy = true;
+  toast(esc(t('cs.busy', { title: doc.title })), null, 120000);
+  try {
+    const page = await api(`documents/${doc.id}/cheatsheet`, { method: 'POST' });
+    $('toast').hidden = true;
+    refreshArchive();
+    location.hash = '#/seite/' + page.id;
+  } catch (e) {
+    toast(esc(errText(e)), null, 15000);
+  } finally { cheatBusy = false; }
+}
+
+// --------------------------------------------------------------- vikunja
+// Maintenance from a manual: the AI lists the recurring work, the person picks and adjusts it,
+// then the tasks go to the chosen Vikunja project – repeating, with a link back here.
+
+const UNITS = [['d', 1], ['w', 7], ['m', 30], ['y', 365]];
+
+function splitDays(days) {
+  // 365 → 1 year, 91 → 3 months, 14 → 2 weeks, 10 → 10 days
+  if (!days) return [0, 'm'];
+  if (days % 365 === 0) return [days / 365, 'y'];
+  if (days < 60 && days % 7 === 0) return [days / 7, 'w'];
+  const months = days / 30.4;
+  if (days >= 28 && Math.abs(months - Math.round(months)) < 0.1) return [Math.round(months), 'm'];
+  return [days, 'd'];
+}
+
+const toDays = (n, unit) => Math.round(Number(n) * (unit === 'm' ? 30.4 : UNITS.find(x => x[0] === unit)[1]));
+
+async function openMaintenance(doc) {
+  const dlg = $('mt-dlg');
+  $('mt-title').textContent = t('mt.title', { title: doc.title });
+  $('mt-intro').textContent = t('mt.busy');
+  $('mt-list').innerHTML = '';
+  $('mt-msg').textContent = '';
+  $('mt-create').disabled = true;
+  dlg.showModal();
+  let tasks;
+  try { tasks = (await api(`documents/${doc.id}/maintenance`, { method: 'POST' })).tasks; }
+  catch (e) { $('mt-intro').textContent = errText(e); return; }
+  if (!tasks.length) { $('mt-intro').textContent = t('mt.none'); return; }
+  $('mt-intro').textContent = t('mt.intro');
+  const today = new Date();
+  for (const [i, task] of tasks.entries()) {
+    const [n, unit] = splitDays(task.every_days);
+    const due = new Date(today.getTime() + (task.every_days || 0) * 86400000).toISOString().slice(0, 10);
+    const row = document.createElement('div');
+    row.className = 'mt-row';
+    row.innerHTML =
+      `<input type="checkbox" class="mt-on" checked aria-label="${esc(task.title)}">` +
+      `<div class="mt-main"><input class="fd-input mt-titlein" value="${esc(task.title)}">` +
+      (task.note ? `<div class="mt-note">${esc(task.note)}${task.page ? ` (S. ${task.page})` : ''}</div>` : '') + `</div>` +
+      `<label class="mt-every">${esc(t('mt.every'))} <input class="fd-input mt-n" type="number" min="1" value="${n || ''}" placeholder="–">` +
+      `<select class="fd-input mt-unit">${UNITS.map(([u]) => `<option value="${u}"${u === unit ? ' selected' : ''}>${esc(t('mt.u.' + u))}</option>`).join('')}</select></label>` +
+      `<label class="mt-due">${esc(t('mt.first'))} <input class="fd-input mt-date" type="date" value="${task.every_days ? due : ''}"></label>`;
+    row.dataset.i = i;
+    $('mt-list').appendChild(row);
+  }
+  $('mt-create').disabled = false;
+  $('mt-create').onclick = async () => {
+    const chosen = [...$('mt-list').querySelectorAll('.mt-row')].filter(r => r.querySelector('.mt-on').checked).map(r => {
+      const task = tasks[Number(r.dataset.i)];
+      const n = r.querySelector('.mt-n').value;
+      return { title: r.querySelector('.mt-titlein').value.trim(), note: task.note, page: task.page,
+        every_days: n ? toDays(n, r.querySelector('.mt-unit').value) : null, due: r.querySelector('.mt-date').value || null };
+    }).filter(x => x.title);
+    if (!chosen.length) return;
+    $('mt-create').disabled = true;
+    try {
+      const link = `${location.origin}${location.pathname}#/dokument/${doc.id}`;
+      const r = await api(`documents/${doc.id}/maintenance/create`, { method: 'POST', body: JSON.stringify({ tasks: chosen, link }) });
+      if (r.failed.length) setMsg($('mt-msg'), r.failed.map(f => `${f.title}: ${errText(new Error(f.error))}`).join(' · '), false);
+      if (r.created.length) {
+        if (!r.failed.length) dlg.close();
+        toast(esc(t('mt.done', { n: r.created.length })), { label: t('mt.open'), run: () => window.open(r.created[0].url, '_blank', 'noopener') });
+      }
+    } catch (e) { setMsg($('mt-msg'), errText(e), false); }
+    finally { $('mt-create').disabled = false; }
+  };
+}
+
+async function loadVikunja() {
+  $('vk-msg').textContent = '';
+  let c;
+  try { c = await api('vikunja'); } catch (e) { setMsg($('vk-msg'), errText(e), false); return; }
+  $('vk-url').value = c.url;
+  $('vk-token').value = '';
+  $('vk-token-state').textContent = c.token_set ? t('vk.token.set') : t('vk.token.none');
+  const sel = $('vk-project');
+  sel.innerHTML = c.project_id ? `<option value="${c.project_id}">${esc(c.project_title || '#' + c.project_id)}</option>` : `<option value="0">–</option>`;
+  if (c.token_set) fillVikunjaProjects(c.project_id);
+}
+
+async function fillVikunjaProjects(current) {
+  try {
+    const projects = await api('vikunja/projects');
+    const byId = Object.fromEntries(projects.map(p => [p.id, p]));
+    const name = p => (p.parent && byId[p.parent] ? name(byId[p.parent]) + ' › ' : '') + p.title;
+    $('vk-project').innerHTML = `<option value="0">${esc(t('vk.project.pick'))}</option>` +
+      projects.map(p => `<option value="${p.id}"${p.id === current ? ' selected' : ''}>${esc(name(p))}</option>`).join('');
+    return true;
+  } catch (e) { setMsg($('vk-msg'), errText(e), false); return false; }
+}
+
+async function saveVikunja() {
+  const body = { url: $('vk-url').value.trim() };
+  if ($('vk-token').value.trim()) body.token = $('vk-token').value.trim();
+  const sel = $('vk-project');
+  body.project_id = Number(sel.value) || 0;
+  body.project_title = sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : '';
+  try {
+    const c = await api('vikunja', { method: 'PUT', body: JSON.stringify(body) });
+    $('vk-token').value = '';
+    $('vk-token-state').textContent = c.token_set ? t('vk.token.set') : t('vk.token.none');
+    if (c.token_set && await fillVikunjaProjects(c.project_id)) {
+      setMsg($('vk-msg'), c.ready ? t('vk.ok') : t('vk.pick'), true);
+    }
+    loadStatus();
+  } catch (e) { setMsg($('vk-msg'), errText(e), false); }
+}
+
+// -------------------------------------------------------------- QR sticker
+// A sticker on the device: the phone opens its manual (a PDF in the reader, at a page if wanted).
+
+const qrLink = (doc, page) => `${location.origin}${location.pathname}#/dokument/${doc.id}${page ? '/' + page : ''}`;
+let qrDoc = null;
+
+function openQr(doc) {
+  qrDoc = doc;
+  $('qr-text').value = doc.title;
+  const pdf = doc.ext === 'pdf';
+  document.querySelectorAll('.qr-pagefield').forEach(el => { el.hidden = !pdf; });
+  $('qr-page').value = pdf && Reader.doc && Reader.doc.id === doc.id && Reader.page > 1 ? Reader.page : '';
+  $('qr-size').value = store.get('qrSize', '40');
+  paintQr();
+  $('qr-dlg').showModal();
+}
+
+function qrCurrent() {
+  const page = Math.max(0, Number($('qr-page').value) || 0);
+  return { url: qrLink(qrDoc, qrDoc.ext === 'pdf' ? page : 0), label: $('qr-text').value.trim(), mm: Number($('qr-size').value) };
+}
+
+function paintQr() {
+  const q = qrCurrent();
+  $('qr-img').src = 'api/qr?text=' + encodeURIComponent(q.url);
+  $('qr-label').textContent = q.label;
+  $('qr-url').textContent = q.url;
+}
+
+async function printQr() {
+  const q = qrCurrent();
+  store.set('qrSize', String(q.mm));
+  let svg;
+  try {
+    const res = await fetch('api/qr?text=' + encodeURIComponent(q.url), { credentials: 'same-origin' });
+    if (!res.ok) throw new Error(res.statusText);
+    svg = await res.text();
+  } catch (e) { toast(esc(errText(e))); return; }
+  const w = window.open('', '_blank', 'width=480,height=640');
+  if (!w) { toast(esc(t('qr.popup'))); return; }
+  const font = Math.max(2.4, q.mm * 0.09).toFixed(1);
+  w.document.write(`<!doctype html><html lang="${LANG}"><head><meta charset="utf-8"><title>${esc(q.label)}</title><style>
+    @page { margin: 4mm; } html, body { margin: 0; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+    .label { width: ${q.mm}mm; display: inline-flex; flex-direction: column; align-items: center; gap: 1mm; padding: 2mm;
+      border: 0.2mm dashed #bbb; box-sizing: content-box; }
+    .label svg { width: ${q.mm}mm; height: ${q.mm}mm; display: block; }
+    .label span { font-size: ${font}mm; line-height: 1.15; text-align: center; overflow-wrap: anywhere; font-weight: 600; }
+    @media print { .label { border-color: transparent; } }
+  </style></head><body><div class="label">${svg}<span>${esc(q.label)}</span></div></body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 250);
+}
+
+function initQr() {
+  ['qr-text', 'qr-page', 'qr-size'].forEach(id => $(id).addEventListener('input', debounce(paintQr, 250)));
+  $('qr-size').addEventListener('change', paintQr);
+  $('qr-print').addEventListener('click', printQr);
+  $('qr-copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(qrCurrent().url); toast(esc(t('qr.copied')), null, 2500); }
+    catch { toast(esc(qrCurrent().url)); }
+  });
+}
+
+// ------------------------------------------------------- table of contents
+// A magazine's articles with the PDF page they start on: a side panel in the reader. Made by the
+// AI on request – for one issue in the reader, or for every issue of a shelf at once.
+
+
+async function loadToc(doc) {
+  Reader.toc = [];
+  paintToc();
+  try { Reader.toc = (await api(`documents/${doc.id}/toc`)).entries; } catch { /* stays empty */ }
+  if (Reader.doc === doc) paintToc();
+}
+
+function paintToc() {
+  const n = Reader.toc.length;
+  $('pdf-toc-btn').textContent = n ? `${t('toc.btn')} (${n})` : t('toc.btn');
+  const list = $('pdf-toc-list');
+  list.innerHTML = Reader.toc.map((e, i) =>
+    `<li><button type="button" class="pdf-toc__item" data-i="${i}"><span class="pdf-toc__page">${e.page}</span>` +
+    `<span class="pdf-toc__text"><span class="pdf-toc__title">${esc(e.title)}</span>` +
+    (e.summary ? `<span class="pdf-toc__sum">${esc(e.summary)}</span>` : '') + `</span></button></li>`).join('');
+  list.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => {
+    scrollToPage(Reader.toc[Number(b.dataset.i)].page);
+    if (matchMedia('(max-width: 700px)').matches) showToc(false);
+  }));
+  const may = Reader.doc && canWrite(Reader.doc) && State.status && State.status.ask;
+  $('pdf-toc-empty').hidden = n > 0;
+  $('pdf-toc-make').hidden = !may;
+  $('pdf-toc-foot').hidden = !n || !may;
+  $('pdf-toc-foot').innerHTML = n && may ? `<button type="button" class="fd-link pdf-toc__redo">${esc(t('toc.redo'))}</button>` : '';
+  $('pdf-toc-foot').querySelector('button')?.addEventListener('click', () => makeToc(Reader.doc));
+  markTocEntry();
+}
+
+function markTocEntry() {
+  let at = -1;
+  Reader.toc.forEach((e, i) => { if (e.page <= Reader.page) at = i; });
+  $('pdf-toc-list').querySelectorAll('.pdf-toc__item').forEach((b, i) => b.classList.toggle('is-current', i === at));
+}
+
+function showToc(on) {
+  $('pdf-toc').hidden = !on;
+  $('pdf-toc-btn').setAttribute('aria-pressed', String(on));
+  store.set('readerToc', on);
+  if (Reader.pdf) setZoom(Reader.zoom);            // the pages get narrower or wider
+}
+
+async function makeToc(doc, quiet = false) {
+  if (!quiet) { $('pdf-toc-make').disabled = true; toast(esc(t('toc.busy', { title: doc.title })), null, 120000); }
+  try {
+    const r = await api(`documents/${doc.id}/toc`, { method: 'POST' });
+    if (!quiet) $('toast').hidden = true;
+    if (Reader.doc && Reader.doc.id === doc.id) { Reader.toc = r.entries; paintToc(); showToc(true); }
+    return r.entries.length;
+  } catch (e) {
+    if (!quiet) toast(esc(errText(e)), null, 15000);
+    throw e;
+  } finally { $('pdf-toc-make').disabled = false; }
+}
+
+async function makeTocsForShelf() {
+  let known;
+  try { known = new Set(await api('tocs')); } catch (e) { toast(esc(errText(e))); return; }
+  const todo = State.items.filter(d => d.ext === 'pdf' && canWrite(d) && !known.has(d.sha256));
+  if (!todo.length) { toast(esc(t('toc.all.none')), null, 4000); return; }
+  if (!confirm(t('toc.all.q', { n: todo.length, cost: (todo.length * 0.06).toLocaleString(LANG, { style: 'currency', currency: 'USD' }) }))) return;
+  $('shelf-toc').disabled = true;
+  let done = 0;
+  try {
+    for (const doc of todo) {
+      toast(esc(t('toc.all.busy', { n: done + 1, total: todo.length, title: doc.title })), null, 180000);
+      await makeToc(doc, true);
+      done++;
+    }
+    toast(esc(t('toc.all.done', { n: done })), null, 6000);
+  } catch (e) {
+    toast(esc(`${t('toc.all.stopped', { n: done })} ${errText(e)}`), null, 15000);
+  } finally { $('shelf-toc').disabled = false; }
+}
+
+function initToc() {
+  $('pdf-toc-btn').addEventListener('click', () => showToc($('pdf-toc').hidden));
+  $('pdf-toc-close').addEventListener('click', () => showToc(false));
+  $('pdf-toc-make').addEventListener('click', () => makeToc(Reader.doc).catch(() => null));
+  $('shelf-toc').addEventListener('click', makeTocsForShelf);
+  if (store.get('readerToc', false) && !matchMedia('(max-width: 700px)').matches) { $('pdf-toc').hidden = false; $('pdf-toc-btn').setAttribute('aria-pressed', 'true'); }
+}
+
+// ----------------------------------------------------------------- reader
+// PDFs open in Wissen!'s own reader (pdf.js): pages are drawn when they come near, the page one
+// is on is remembered per account (and per content), so a magazine opens where it was left.
+// "#/pdf/<id>/<page>" opens at a page – used by QR stickers, the AI's sources and links in pages.
+
+let pdfjsLib = null;
+const Reader = { doc: null, pdf: null, task: null, zoom: 1, page: 1, total: 0, sheets: [], ratio: 1.414,
+  observer: null, drawn: new Map(), saveTimer: null, token: 0, done: false, toc: [] };
+
+async function loadPdfjs() {
+  if (!pdfjsLib) {
+    pdfjsLib = await import('./vendor/pdfjs/pdf.min.mjs');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.mjs';
+  }
+  return pdfjsLib;
+}
+
+async function loadReading() {
+  try { State.reading = await api('me/reading'); } catch { State.reading = {}; }
+}
+
+async function openLink(id, page) {
+  // a QR sticker or shared link: a page opens as page, a PDF in the reader (at the page, if given)
+  try {
+    const doc = await api('documents/' + id);
+    location.replace(doc.ext === 'md' ? `#/seite/${doc.id}` : `#/pdf/${doc.id}${page ? '/' + page : ''}`);
+  } catch (e) { toast(esc(errText(e))); location.replace('#/start'); }
+}
+
+function closeReader() {
+  if (!Reader.doc) return;
+  saveReading(true);
+  Reader.observer?.disconnect();
+  Reader.task?.destroy?.();
+  Reader.drawn.forEach(r => r.task?.cancel?.());
+  Object.assign(Reader, { doc: null, pdf: null, task: null, sheets: [], drawn: new Map(), observer: null });
+  $('pdf-body').innerHTML = '';
+  document.title = 'Wissen!';
+  if (!$('archive-layout').hidden) renderList();          // progress on the shelf
+}
+
+async function openReader(id, page) {
+  if (Reader.doc && Reader.doc.id === id) { if (page) scrollToPage(page); return; }
+  closeReader();
+  const token = ++Reader.token;
+  const body = $('pdf-body');
+  body.innerHTML = `<p class="preview__none">${esc(t('rd.loading'))}</p>`;
+  try {
+    const doc = await api('documents/' + id);
+    if (doc.ext === 'md') { location.replace('#/seite/' + doc.id); return; }
+    const lib = await loadPdfjs();
+    const task = lib.getDocument({ url: `api/documents/${doc.id}/file`, withCredentials: true,
+      standardFontDataUrl: 'vendor/pdfjs/standard_fonts/', isEvalSupported: false });
+    const pdf = await task.promise;
+    if (token !== Reader.token) { task.destroy(); return; }
+    const first = await pdf.getPage(1);
+    const vp = first.getViewport({ scale: 1 });
+    const saved = State.reading[doc.id] || {};
+    Object.assign(Reader, { doc, pdf, task, page: 0, total: pdf.numPages, ratio: vp.height / vp.width,
+      zoom: Number(store.get('readerZoom', 1)) || 1, done: !!saved.done, drawn: new Map() });
+    document.title = doc.title + ' – Wissen!';
+    $('pdf-title').textContent = doc.title;
+    $('pdf-title').title = [areaLabel(doc.area), ...(doc.folder ? doc.folder.split('/') : []), doc.title].join(' › ');
+    $('pdf-total').textContent = t('rd.of', { n: pdf.numPages });
+    $('pdf-page').max = pdf.numPages;
+    $('pdf-download').href = `api/documents/${doc.id}/file?download=true`;
+    paintPin($('pdf-pin'), doc);
+    $('pdf-pin').onclick = () => togglePin(doc);
+    $('pdf-menu').onclick = () => docMenu($('pdf-menu'), doc);
+    paintDone();
+    loadToc(doc);
+    buildSheets();
+    const start = page || (saved.done ? 1 : saved.page) || 1;
+    scrollToPage(Math.min(Math.max(1, start), pdf.numPages), false);
+    if (!saved.total || saved.total !== pdf.numPages) saveReading(true);
+  } catch (e) {
+    if (token === Reader.token) body.innerHTML = `<p class="preview__none">${esc(errText(e))}</p>`;
+  }
+}
+
+function sheetWidth() {
+  const avail = $('pdf-body').clientWidth - 32;
+  return Math.max(200, Math.round(Math.min(avail, 1000) * Reader.zoom));
+}
+
+function buildSheets() {
+  const body = $('pdf-body');
+  body.innerHTML = '';
+  Reader.observer?.disconnect();
+  Reader.drawn.forEach(r => r.task?.cancel?.());
+  Reader.drawn = new Map();
+  const w = sheetWidth();
+  Reader.sheets = [];
+  for (let n = 1; n <= Reader.total; n++) {
+    const sheet = document.createElement('div');
+    sheet.className = 'pdf-sheet';
+    sheet.dataset.n = n;
+    sheet.style.width = w + 'px';
+    sheet.style.height = Math.round(w * Reader.ratio) + 'px';
+    body.appendChild(sheet);
+    Reader.sheets.push(sheet);
+  }
+  Reader.observer = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      const n = Number(e.target.dataset.n);
+      if (e.isIntersecting) drawPage(n);
+      else forgetPage(n);
+    }
+  }, { root: body, rootMargin: '150% 0px' });
+  Reader.sheets.forEach(sh => Reader.observer.observe(sh));
+}
+
+async function drawPage(n) {
+  if (Reader.drawn.has(n) || !Reader.pdf) return;
+  const entry = { task: null };
+  Reader.drawn.set(n, entry);
+  const pdf = Reader.pdf;
+  try {
+    const page = await pdf.getPage(n);
+    if (Reader.pdf !== pdf || Reader.drawn.get(n) !== entry) return;
+    const sheet = Reader.sheets[n - 1];
+    const w = sheetWidth();
+    const base = page.getViewport({ scale: 1 });
+    const css = w / base.width;
+    sheet.style.height = Math.round(base.height * css) + 'px';     // pages may differ from page 1
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const vp = page.getViewport({ scale: css * dpr });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.floor(vp.width);
+    canvas.height = Math.floor(vp.height);
+    entry.task = page.render({ canvasContext: canvas.getContext('2d'), viewport: vp });
+    await entry.task.promise;
+    if (Reader.drawn.get(n) !== entry) return;
+    sheet.replaceChildren(canvas);
+  } catch (e) {
+    if (e?.name !== 'RenderingCancelledException') Reader.drawn.delete(n);
+  }
+}
+
+function forgetPage(n) {
+  const entry = Reader.drawn.get(n);
+  if (!entry) return;
+  entry.task?.cancel?.();
+  Reader.drawn.delete(n);
+  Reader.sheets[n - 1]?.replaceChildren();          // memory: a 130-page magazine stays light
+}
+
+function scrollToPage(n, smooth = true) {
+  const sheet = Reader.sheets[n - 1];
+  if (!sheet) return;
+  $('pdf-body').scrollTo({ top: sheet.offsetTop - 12, behavior: smooth ? 'smooth' : 'auto' });
+  setPage(n);
+}
+
+function setPage(n) {
+  if (n === Reader.page && $('pdf-page').value == n) return;
+  Reader.page = n;
+  if (document.activeElement !== $('pdf-page')) $('pdf-page').value = n;
+  if (Reader.doc) history.replaceState(null, '', `#/pdf/${Reader.doc.id}/${n}`);
+  if (n === Reader.total && Reader.total > 1 && !Reader.done) { Reader.done = true; paintDone(); }
+  markTocEntry();
+  saveReading();
+}
+
+function pageInView() {
+  const body = $('pdf-body');
+  const mid = body.scrollTop + body.clientHeight / 3;
+  let lo = 0, hi = Reader.sheets.length - 1;
+  while (lo < hi) {                                   // sheets are in order: binary search
+    const m = (lo + hi + 1) >> 1;
+    if (Reader.sheets[m].offsetTop <= mid) lo = m; else hi = m - 1;
+  }
+  return lo + 1;
+}
+
+function saveReading(now = false) {
+  clearTimeout(Reader.saveTimer);
+  const doc = Reader.doc;
+  if (!doc) return;
+  const body = { id: doc.id, page: Reader.page, total: Reader.total, done: Reader.done };
+  const send = () => api('me/reading', { method: 'PUT', body: JSON.stringify(body) })
+    .then(r => { State.reading[doc.id] = r; }).catch(() => null);
+  State.reading[doc.id] = { ...(State.reading[doc.id] || {}), page: body.page, total: body.total, done: body.done };
+  if (now) send(); else Reader.saveTimer = setTimeout(send, 1500);
+}
+
+function paintDone() {
+  const b = $('pdf-done');
+  b.setAttribute('aria-pressed', String(Reader.done));
+  b.textContent = (Reader.done ? '✓ ' : '') + t('rd.done');
+}
+
+function setZoom(z) {
+  const keep = Reader.page;
+  Reader.zoom = Math.max(0.5, Math.min(3, Math.round(z * 100) / 100));
+  store.set('readerZoom', Reader.zoom);
+  buildSheets();
+  scrollToPage(keep, false);
+}
+
+function initReader() {
+  let ticking = false;
+  $('pdf-body').addEventListener('scroll', () => {
+    if (ticking || !Reader.pdf) return;
+    ticking = true;
+    requestAnimationFrame(() => { ticking = false; setPage(pageInView()); });
+  }, { passive: true });
+  $('pdf-page').addEventListener('change', ev => {
+    const n = Math.max(1, Math.min(Reader.total, Number(ev.target.value) || 1));
+    scrollToPage(n);
+    ev.target.blur();
+  });
+  $('pdf-zoom-in').addEventListener('click', () => setZoom(Reader.zoom * 1.2));
+  $('pdf-zoom-out').addEventListener('click', () => setZoom(Reader.zoom / 1.2));
+  $('pdf-zoom-fit').addEventListener('click', () => setZoom(1));
+  $('pdf-done').addEventListener('click', () => { Reader.done = !Reader.done; paintDone(); saveReading(true); });
+  $('pdf-body').addEventListener('keydown', ev => {
+    if (ev.key === 'PageDown' || ev.key === 'ArrowRight') { scrollToPage(Math.min(Reader.total, Reader.page + 1)); ev.preventDefault(); }
+    if (ev.key === 'PageUp' || ev.key === 'ArrowLeft') { scrollToPage(Math.max(1, Reader.page - 1)); ev.preventDefault(); }
+  });
+  let resizeTimer = null;
+  addEventListener('resize', () => {
+    if (!Reader.pdf) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => setZoom(Reader.zoom), 250);
+  });
+  addEventListener('pagehide', () => saveReading(true));
+}
 
 // ------------------------------------------------------------------ pages
 // A page is a Markdown file. It is rendered in the browser (marked), cleaned (DOMPurify),
@@ -3784,7 +4886,10 @@ async function renderPage(box, doc, text) {
       try {
         const hit = await api('documents/by-path?path=' + encodeURIComponent(target));
         if (hit.ext === 'md') location.hash = '#/seite/' + hit.id + (frag ? '/' + encodeURIComponent(safeDecode(frag)) : '');
-        else window.open(`api/documents/${hit.id}/file${frag ? '#' + frag : ''}`, '_blank', 'noopener');
+        else if (hit.ext === 'pdf') {          // "Anleitung.pdf#page=12" opens the reader at that page
+          const page = (frag || '').match(/page=(\d+)/);
+          location.hash = `#/pdf/${hit.id}${page ? '/' + page[1] : ''}`;
+        } else window.open(`api/documents/${hit.id}/file${frag ? '#' + frag : ''}`, '_blank', 'noopener');
       } catch {
         window.open(assetUrl(doc, href.split('#')[0]), '_blank', 'noopener');
       }

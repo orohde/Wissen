@@ -105,7 +105,7 @@ body {
 }
 
 .list-panel { flex: 1; min-width: 0; overflow: auto; padding: 0.75rem 1rem 2rem; }
-.list-head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem; }
+.list-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.75rem; margin-bottom: 0.5rem; }
 .list-head h2 { margin: 0; }
 .list-count { color: var(--sapContent_LabelColor, #556b82); }
 .list-empty { color: var(--sapContent_LabelColor, #556b82); padding: 1rem 0; }
@@ -1018,4 +1018,186 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .set-row { grid-template-columns: 1fr; row-gap: 0.4rem; }
   .set-row--check { grid-template-columns: 1fr auto; }
   .set-row--check .set-hint { grid-column: 1 / -1; }
+}
+
+/* ------------------------------------------------------------ Wissen!: shelf (covers instead of the list) */
+.list-head .view-switch { margin-left: auto; }
+.list-head .view-switch:not([hidden]) ~ .list-ask,
+.list-head .view-switch:not([hidden]) ~ .list-ask[hidden] + .list-trash { margin-left: 0; }
+.doc-table[hidden], .view-switch[hidden], .shelf[hidden], .shelf-sort[hidden] { display: none; }
+.view-switch { display: inline-flex; align-self: center; border: 1px solid var(--sapButton_BorderColor, #bcc3ca); border-radius: 0.5rem; overflow: hidden; }
+.view-switch__btn {
+  font: inherit; font-size: 0.8125rem; padding: 0.2rem 0.7rem; border: 0; cursor: pointer;
+  background: transparent; color: var(--sapButton_TextColor, #0064d9);
+}
+.view-switch__btn + .view-switch__btn { border-left: 1px solid var(--sapButton_BorderColor, #bcc3ca); }
+.view-switch__btn[aria-pressed="true"] { background: var(--sapButton_Selected_Background, #edf6ff); font-weight: 600; }
+.view-switch__btn:focus-visible { outline: 2px solid var(--sapLinkColor, #0064d9); outline-offset: -2px; }
+.view-switch, .shelf-sort { flex: none; }
+.shelf-sort { align-self: center; width: auto; }
+.list-head h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shelf { display: grid; gap: 1.25rem 1rem; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); padding: 0.5rem 0 1rem; }
+.shelf-card { position: relative; display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.shelf-card__open {
+  display: flex; flex-direction: column; gap: 0.4rem; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 0.4rem;
+}
+.shelf-card__open:focus-visible { outline: 2px solid var(--sapLinkColor, #0064d9); outline-offset: 3px; }
+.shelf-card__cover {
+  position: relative; aspect-ratio: 210 / 297; width: 100%; overflow: hidden; border-radius: 0.3rem;
+  background: var(--sapGroup_ContentBackground, #fff);
+  border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 4px 10px rgba(0, 0, 0, .06);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.shelf-card__open:hover .shelf-card__cover { transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0, 0, 0, .16), 0 8px 18px rgba(0, 0, 0, .08); }
+.shelf-card.is-selected .shelf-card__cover { border-color: var(--sapLinkColor, #0064d9); box-shadow: 0 0 0 2px var(--sapLinkColor, #0064d9); }
+.shelf-card__cover img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.shelf-card__none {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem; color: var(--sapContent_LabelColor, #556b82); opacity: .5;
+}
+.shelf-card__title { font-weight: 600; font-size: 0.875rem; line-height: 1.3; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.shelf-card__sub { color: var(--sapContent_LabelColor, #556b82); font-size: 0.75rem; }
+.shelf-card .doc-menu { position: absolute; top: 0.3rem; right: 0.3rem; background: var(--sapGroup_ContentBackground, #fff); border-radius: 0.4rem; opacity: 0; }
+.shelf-card:hover .doc-menu, .shelf-card .doc-menu:focus-visible { opacity: .95; }
+@media (hover: none) { .shelf-card .doc-menu { opacity: .9; } }
+@media (max-width: 600px) { .shelf { grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 1rem 0.75rem; } }
+
+/* ------------------------------------------------------------ Wissen!: inbox (_Eingang) */
+.inbox-badge {
+  display: inline-block; min-width: 1.25rem; padding: 0 0.35rem; margin-left: 0.15rem; border-radius: 1rem;
+  background: var(--sapButton_Emphasized_Background, #0070f2); color: #fff; font-size: 0.75rem; line-height: 1.25rem; text-align: center;
+}
+.inbox-badge[hidden], .inbox-link[hidden], .drop-veil[hidden] { display: none; }
+.list-head .list-inbox { white-space: nowrap; }
+.start-head .start-inbox { margin-left: auto; }
+.start-head .start-inbox:not([hidden]) ~ .start-trash { margin-left: 0; }
+.in-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 1.75rem 1rem; margin-bottom: 1.25rem; text-align: center; cursor: pointer;
+  border: 2px dashed var(--sapGroup_ContentBorderColor, #bcc3ca); border-radius: var(--sapElement_BorderCornerRadius, 0.75rem);
+  background: var(--sapGroup_ContentBackground, #fff); transition: border-color .12s ease, background .12s ease;
+}
+.in-drop:hover, .in-drop.is-over { border-color: var(--sapLinkColor, #0064d9); background: var(--sapButton_Selected_Background, #edf6ff); }
+.in-drop:focus-within { outline: 2px solid var(--sapLinkColor, #0064d9); outline-offset: 2px; }
+.in-drop__big { font-weight: 600; font-size: 1rem; }
+.in-drop__small { color: var(--sapContent_LabelColor, #556b82); font-size: 0.8125rem; max-width: 40rem; }
+.in-items { display: grid; gap: 0.75rem; }
+.in-card {
+  display: flex; gap: 1rem; min-width: 0; padding: 0.75rem;
+  border-radius: var(--sapElement_BorderCornerRadius, 0.75rem);
+  background: var(--sapGroup_ContentBackground, #fff); border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9);
+}
+.in-card__cover {
+  position: relative; flex: none; width: 5.5rem; aspect-ratio: 210 / 297; overflow: hidden; border-radius: 0.3rem;
+  border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9); background: var(--sapBackgroundColor, #f5f6f7);
+}
+.in-card__cover img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.in-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.in-card__title { font-weight: 600; overflow-wrap: anywhere; }
+.in-card__place { display: flex; align-items: baseline; gap: 0.35rem; flex-wrap: wrap; font-size: 0.875rem; }
+.in-card__place .area-dot { flex: none; }
+.in-card__ai { font-size: 0.75rem; padding: 0 0.4rem; border-radius: 1rem; background: var(--sapButton_Selected_Background, #edf6ff); color: var(--sapLinkColor, #0064d9); }
+.in-card__meta { color: var(--sapContent_LabelColor, #556b82); font-size: 0.75rem; overflow-wrap: anywhere; }
+.in-card__dup { color: var(--sapCriticalTextColor, #b44f00); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.in-card__actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; padding-top: 0.3rem; }
+.drop-veil {
+  position: fixed; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center; pointer-events: none;
+  background: rgba(0, 112, 242, .12); border: 3px dashed var(--sapLinkColor, #0064d9);
+}
+.drop-veil span { padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-weight: 600; font-size: 1.1rem;
+  background: var(--sapGroup_ContentBackground, #fff); color: var(--sapLinkColor, #0064d9); box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+@media (max-width: 600px) { .in-card__cover { width: 4rem; } .in-card { gap: 0.75rem; } }
+.in-card__ai--wait { background: transparent; color: var(--sapContent_LabelColor, #556b82); border: 1px dashed currentColor; }
+.in-card__ai--fail { background: transparent; color: var(--sapCriticalTextColor, #b44f00); }
+
+/* ------------------------------------------------------------ Wissen!: move by dragging onto the tree */
+.drag-ghost {
+  position: fixed; top: -100px; left: -1000px; max-width: 18rem; padding: 0.35rem 0.75rem; border-radius: 0.5rem;
+  background: var(--sapButton_Emphasized_Background, #0070f2); color: #fff; font-size: 0.8125rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+tr[draggable="true"], .shelf-card[draggable="true"] { cursor: grab; }
+body.is-dragging-docs .tree-row { transition: background .1s ease; }
+body.is-dragging-docs .tree-panel { box-shadow: inset -3px 0 0 var(--sapLinkColor, #0064d9); }
+
+/* ------------------------------------------------------------ Wissen!: PDF reader (pdf.js) */
+.pdfpage { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pdfpage[hidden] { display: none; }
+.pdf-bar { width: 100%; box-sizing: border-box; }
+.pdf-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.pdf-pages { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+.pdf-page-input { width: 4.25rem; height: 1.9rem; text-align: center; }
+.pdf-total { color: var(--sapContent_LabelColor, #556b82); font-size: 0.875rem; }
+.pdf-zoom { display: inline-flex; }
+.pdf-body { position: relative; flex: 1; min-height: 0; overflow: auto; padding: 1rem; outline: none;
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem; background: var(--sapBackgroundColor, #eff1f2); }
+.pdf-sheet { flex: none; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18), 0 4px 12px rgba(0,0,0,.06); }
+.pdf-sheet canvas { display: block; width: 100%; height: 100%; }
+.shelf-card__done { position: absolute; right: 0.35rem; bottom: 0.35rem; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;
+  background: var(--sapPositiveColor, #188918); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.shelf-card__progress { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0,0,0,.25); }
+.shelf-card__progress span { display: block; height: 100%; background: var(--sapButton_Emphasized_Background, #0070f2); }
+@media (max-width: 700px) {
+  .pdf-bar .settings-back { width: auto; }
+  .pdf-title { flex-basis: 100%; order: 5; }
+  .pdf-body { padding: 0.5rem; }
+  #pdf-download { display: none; }
+}
+
+/* ------------------------------------------------------------ Wissen!: QR sticker */
+.qr-dlg { max-width: 34rem; }
+.qr-form { display: flex; flex-direction: column; gap: 1rem; }
+.qr-main { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.qr-preview { flex: none; width: 11rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  padding: 0.6rem; border: 1px dashed var(--sapGroup_ContentBorderColor, #bcc3ca); border-radius: 0.5rem; background: #fff; color: #000; }
+.qr-preview img { width: 100%; aspect-ratio: 1; display: block; }
+.qr-preview__label { font-weight: 600; font-size: 0.8125rem; text-align: center; overflow-wrap: anywhere; }
+.qr-fields { flex: 1; min-width: 12rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.qr-fields [hidden] { display: none; }
+.qr-url { margin: 0.4rem 0 0; font-size: 0.75rem; color: var(--sapContent_LabelColor, #556b82); overflow-wrap: anywhere; }
+.qr-actions { display: flex; gap: 0.5rem; align-items: center; }
+.qr-actions .spacer { flex: 1; }
+
+/* ------------------------------------------------------------ Wissen!: maintenance → Vikunja */
+.mt-dlg { max-width: 52rem; width: calc(100vw - 2rem); }
+.mt-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.mt-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 60vh; overflow: auto; }
+.mt-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.5rem 0.75rem; align-items: center;
+  padding: 0.5rem 0.6rem; border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9); border-radius: 0.5rem; }
+.mt-main { min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.mt-note { font-size: 0.75rem; color: var(--sapContent_LabelColor, #556b82); }
+.mt-every, .mt-due { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8125rem; white-space: nowrap; }
+.mt-n { width: 4rem; } .mt-unit { width: auto; } .mt-date { width: auto; }
+@media (max-width: 700px) { .mt-row { grid-template-columns: auto 1fr; } .mt-every, .mt-due { grid-column: 2; } }
+
+/* ------------------------------------------------------------ Wissen!: table of contents in the reader */
+.pdf-main { flex: 1; min-height: 0; display: flex; }
+.pdf-main .pdf-body { flex: 1; min-width: 0; }
+.pdf-toc { flex: none; width: 19rem; display: flex; flex-direction: column; min-height: 0; overflow: auto;
+  border-right: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9); background: var(--sapGroup_ContentBackground, #fff); }
+.pdf-toc[hidden] { display: none; }
+.pdf-toc__head { display: flex; align-items: center; padding: 0.5rem 0.5rem 0.5rem 0.9rem; font-weight: 600;
+  position: sticky; top: 0; background: inherit; border-bottom: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9); }
+.pdf-toc__head .spacer { flex: 1; }
+.pdf-toc__list { list-style: none; margin: 0; padding: 0.35rem; }
+.pdf-toc__item { display: flex; gap: 0.6rem; width: 100%; text-align: left; padding: 0.45rem 0.5rem; border: 0; border-radius: 0.4rem;
+  background: none; font: inherit; color: inherit; cursor: pointer; }
+.pdf-toc__item:hover { background: var(--sapList_Hover_Background, #eaecee); }
+.pdf-toc__item.is-current { background: var(--sapList_SelectionBackgroundColor, #ebf8ff); box-shadow: inset 3px 0 0 var(--sapLinkColor, #0064d9); }
+.pdf-toc__page { flex: none; min-width: 1.6rem; text-align: right; font-variant-numeric: tabular-nums; color: var(--sapContent_LabelColor, #556b82); font-size: 0.8125rem; padding-top: 0.05rem; }
+.pdf-toc__text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.pdf-toc__title { font-weight: 600; font-size: 0.875rem; line-height: 1.3; }
+.pdf-toc__sum { font-size: 0.75rem; color: var(--sapContent_LabelColor, #556b82); line-height: 1.3; }
+.pdf-toc__empty { padding: 1rem; font-size: 0.875rem; }
+.pdf-toc__foot { margin: 0; padding: 0.5rem 1rem 1rem; font-size: 0.8125rem; }
+.pdf-toc__foot[hidden] { display: none; }
+.pdf-toc__redo { background: none; border: 0; padding: 0; cursor: pointer; color: var(--sapLinkColor, #0064d9); font: inherit; }
+.shelf-toc { align-self: center; }
+.shelf-toc[hidden] { display: none; }
+@media (max-width: 700px) {
+  .pdf-toc { position: absolute; z-index: 20; inset: auto 0 0 0; top: 6.5rem; width: auto; box-shadow: 0 -6px 18px rgba(0,0,0,.2); border-right: 0; }
 }

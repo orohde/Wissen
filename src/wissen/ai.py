@@ -56,6 +56,7 @@ class AIConfig:
     base_url: str = ""
     monthly_limit_usd: float = 10.0
     excluded_areas: list[str] = field(default_factory=list)
+    inbox_auto: bool = False      # suggest a place for every new file in the inbox by itself
     usage: dict[str, dict] = field(default_factory=dict)  # "YYYY-MM" -> {calls, input, output, cost}
 
     def public(self) -> dict:
@@ -148,7 +149,7 @@ class AIService:
             target = (config.provider, config.base_url)
             if "provider" in changes and changes["provider"] not in PROVIDERS:
                 raise AIError("unknown provider")
-            for key in ("enabled", "provider", "model", "base_url", "monthly_limit_usd", "excluded_areas"):
+            for key in ("enabled", "provider", "model", "base_url", "monthly_limit_usd", "excluded_areas", "inbox_auto"):
                 if key in changes and changes[key] is not None:
                     setattr(config, key, changes[key])
             config.model = normalize_model(config.provider, config.model)

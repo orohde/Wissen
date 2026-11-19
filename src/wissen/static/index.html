@@ -122,7 +122,19 @@
           <h2 id="list-title" class="fd-title fd-title--h5"></h2>
           <span id="list-count" class="list-count"></span>
           <span id="list-tagfilter" class="tag-row"></span>
+          <span id="view-switch" class="view-switch" role="group" data-i18n-title="shelf.switch">
+            <button type="button" class="view-switch__btn" data-view="list" data-i18n="shelf.list">Liste</button>
+            <button type="button" class="view-switch__btn" data-view="shelf" data-i18n="shelf.shelf">Regal</button>
+          </span>
+          <button id="shelf-toc" class="fd-button fd-button--transparent shelf-toc" type="button" hidden data-i18n="toc.all" data-i18n-title="toc.all.tip">Inhalte erstellen</button>
+          <select id="shelf-sort" class="fd-input kind-select shelf-sort" hidden data-i18n-title="shelf.sort">
+            <option value="title:asc" data-i18n="shelf.sort.titleasc">Titel A–Z</option>
+            <option value="title:desc" data-i18n="shelf.sort.titledesc">Titel Z–A</option>
+            <option value="date:desc" data-i18n="shelf.sort.datedesc">Neueste zuerst</option>
+            <option value="date:asc" data-i18n="shelf.sort.dateasc">Älteste zuerst</option>
+          </select>
           <button id="btn-ask" class="fd-button fd-button--emphasized list-ask" type="button" hidden data-i18n="ask.btn" data-i18n-title="ask.btn.tip">KI fragen</button>
+          <a href="#/eingang" class="fd-button fd-button--transparent list-inbox inbox-link" hidden><span data-i18n="in.title">Eingang</span> <span class="inbox-badge" hidden></span></a>
           <a href="#/papierkorb" class="fd-button fd-button--transparent list-trash" data-i18n="trash.open">Papierkorb</a>
           <button id="btn-new" class="fd-button" type="button" hidden data-i18n="new.page">Neue Seite</button>
         </div>
@@ -144,7 +156,7 @@
           <button id="bulk-clear" class="fd-button fd-button--transparent" type="button" data-i18n="tags.clearsel">Auswahl aufheben</button>
           <span id="bulk-msg" class="form-msg"></span>
         </div>
-        <table class="fd-table doc-table">
+        <table id="doc-table" class="fd-table doc-table">
           <thead class="fd-table__header">
             <tr class="fd-table__row">
               <th class="fd-table__cell col-check"><input type="checkbox" id="chk-all" data-i18n-title="tags.selall"></th>
@@ -156,6 +168,7 @@
           </thead>
           <tbody id="doc-rows" class="fd-table__body"></tbody>
         </table>
+        <div id="doc-shelf" class="shelf" hidden></div>
         <p id="list-empty" class="list-empty" hidden data-i18n="list.empty">Keine Dokumente.</p>
         <div class="list-more"><button id="btn-more" class="fd-button" type="button" hidden data-i18n="list.more">Mehr laden</button></div>
       </main>
@@ -194,6 +207,7 @@
         <section class="start-section">
           <div class="start-head">
             <h2 class="fd-title fd-title--h4" data-i18n="start.recent">Zuletzt geändert</h2>
+            <a href="#/eingang" class="start-all start-inbox inbox-link" hidden><span data-i18n="in.title">Eingang</span> <span class="inbox-badge" hidden></span></a>
             <a href="#/papierkorb" class="start-all start-trash" data-i18n="trash.open">Papierkorb</a>
             <a href="#/" class="start-all start-all--next" data-i18n="start.all">Alle Dokumente →</a>
           </div>
@@ -204,6 +218,24 @@
     </div>
 
     <!-- ============================== Trash ============================== -->
+    <div id="inboxpage" class="startpage" hidden>
+      <div class="start-inner">
+        <div class="start-head">
+          <h2 class="fd-title fd-title--h4" data-i18n="in.title">Eingang</h2>
+          <a href="#/" class="start-all" data-i18n="set.back">← Zurück zum Archiv</a>
+        </div>
+        <label id="in-drop" class="in-drop">
+          <input id="in-files" type="file" multiple accept="application/pdf,.pdf,image/*" hidden>
+          <span class="in-drop__big" data-i18n="in.drop">PDFs hierher ziehen oder antippen zum Auswählen</span>
+          <span class="in-drop__small" id="in-where"></span>
+        </label>
+        <p id="in-busy" class="start-hint" hidden></p>
+        <div id="in-items" class="in-items"></div>
+        <p id="in-empty" class="start-hint" hidden data-i18n="in.empty">Der Eingang ist leer.</p>
+        <datalist id="in-folders"></datalist>
+      </div>
+    </div>
+
     <div id="trashpage" class="startpage" hidden>
       <div class="start-inner">
         <div class="start-head">
@@ -224,6 +256,38 @@
           <tbody id="trash-rows" class="fd-table__body"></tbody>
         </table>
         <p id="trash-empty" class="start-hint" hidden data-i18n="trash.empty"></p>
+      </div>
+    </div>
+
+    <div id="pdfpage" class="pdfpage" hidden>
+      <div class="page-bar pdf-bar">
+        <a href="#/" class="settings-back" data-i18n="set.back">← Zurück zum Archiv</a>
+        <span id="pdf-title" class="pdf-title"></span>
+        <span class="spacer"></span>
+        <span class="pdf-pages"><input id="pdf-page" class="fd-input pdf-page-input" type="number" min="1" inputmode="numeric" data-i18n-title="rd.page"> <span id="pdf-total" class="pdf-total"></span></span>
+        <span class="pdf-zoom" role="group">
+          <button id="pdf-zoom-out" class="fd-button fd-button--transparent" type="button" data-i18n-title="rd.smaller" aria-label="−">−</button>
+          <button id="pdf-zoom-fit" class="fd-button fd-button--transparent" type="button" data-i18n="rd.fit">Breite</button>
+          <button id="pdf-zoom-in" class="fd-button fd-button--transparent" type="button" data-i18n-title="rd.bigger" aria-label="+">+</button>
+        </span>
+        <button id="pdf-toc-btn" class="fd-button fd-button--transparent" type="button" aria-pressed="false" data-i18n="toc.btn">Inhalt</button>
+        <button id="pdf-done" class="fd-button fd-button--transparent" type="button" aria-pressed="false" data-i18n="rd.done">Gelesen</button>
+        <button id="pdf-pin" class="fd-button fd-button--transparent pin-btn" type="button" aria-pressed="false">&#9734;</button>
+        <a id="pdf-download" class="fd-button fd-button--transparent" data-i18n="pv.download">Herunterladen</a>
+        <button id="pdf-menu" class="fd-button fd-button--transparent" type="button" data-i18n-title="ed.menu" aria-label="Mehr">&#8943;</button>
+      </div>
+      <div class="pdf-main">
+        <aside id="pdf-toc" class="pdf-toc" hidden>
+          <div class="pdf-toc__head"><span data-i18n="toc.title">Inhalt</span><span class="spacer"></span>
+            <button id="pdf-toc-close" class="fd-button fd-button--transparent" type="button" aria-label="Schließen">&#10005;</button></div>
+          <ol id="pdf-toc-list" class="pdf-toc__list"></ol>
+          <div id="pdf-toc-empty" class="pdf-toc__empty" hidden>
+            <p data-i18n="toc.none">Für dieses Heft gibt es noch kein Inhaltsverzeichnis.</p>
+            <button id="pdf-toc-make" class="fd-button fd-button--emphasized" type="button" data-i18n="toc.make">Mit KI erstellen</button>
+          </div>
+          <p id="pdf-toc-foot" class="pdf-toc__foot"></p>
+        </aside>
+        <div id="pdf-body" class="pdf-body" tabindex="0"></div>
       </div>
     </div>
 
@@ -594,6 +658,11 @@
               <span class="fd-form-label" data-i18n="ai.exclude">Nie an die KI senden</span>
               <div id="ai-exclude" class="set-field area-checks"></div>
             </div>
+            <div class="set-row set-row--check" data-needs="ai-enabled">
+              <label class="fd-form-label" for="ai-inbox-auto" data-i18n="ai.inboxauto.label">Eingang automatisch vorsortieren</label>
+              <div class="set-field"><input type="checkbox" id="ai-inbox-auto"></div>
+              <p class="set-hint" data-i18n="ai.inboxauto.hint">Fragt die KI von selbst nach Bereich, Ordner und Titel für jede neue Datei im Eingang, außer ein Unterordner gibt den Ort schon vor. Abgelegt wird weiter erst, wenn du es bestätigst.</p>
+            </div>
             <div class="set-actions">
               <button id="ai-test" class="fd-button" type="button" data-i18n="ai.test">Verbindung testen</button>
               <span id="ai-msg" class="form-msg" role="status"></span>
@@ -648,6 +717,28 @@
                 <span class="fd-form-label" data-i18n="mcp.url">Adresse</span>
                 <div class="set-field"><code id="mcp-url" class="mcp-url"></code></div>
                 <p class="set-hint" data-i18n="mcp.keys"></p>
+              </div>
+            </div>
+
+            <div class="set-sub vk-card">
+              <h4 class="fd-title fd-title--h5 set-subtitle" data-i18n="vk.title">Aufgaben in Vikunja</h4>
+              <p class="set-intro" data-i18n="vk.hint">Wartung aus Anleitungen und Spickzetteln wird zu wiederkehrenden Aufgaben in Vikunja (Menü ⋯ → „Wartung nach Vikunja“). Den Token legst du in Vikunja unter Einstellungen → API-Tokens an, mit dem Recht, Aufgaben anzulegen und Projekte zu lesen.</p>
+              <div class="set-row">
+                <label class="fd-form-label" for="vk-url" data-i18n="vk.url">Adresse</label>
+                <div class="set-field"><input class="fd-input" id="vk-url" placeholder="https://vikunja.example.org" autocomplete="off"></div>
+              </div>
+              <div class="set-row">
+                <label class="fd-form-label" for="vk-token" data-i18n="vk.token">API-Token</label>
+                <div class="set-field"><input class="fd-input" id="vk-token" type="password" autocomplete="new-password" data-bwignore="true"></div>
+                <p id="vk-token-state" class="set-hint"></p>
+              </div>
+              <div class="set-row">
+                <label class="fd-form-label" for="vk-project" data-i18n="vk.project">Projekt für die Aufgaben</label>
+                <div class="set-field"><select class="fd-input" id="vk-project"></select></div>
+              </div>
+              <div class="set-actions">
+                <button id="vk-save" class="fd-button fd-button--emphasized" type="button" data-i18n="vk.save">Speichern und prüfen</button>
+                <span id="vk-msg" class="form-msg" role="status"></span>
               </div>
             </div>
 
@@ -802,6 +893,48 @@
     </div>
   </section>
 
+  <dialog id="mt-dlg" class="ai-dlg ed-dlg mt-dlg" aria-labelledby="mt-title">
+    <form method="dialog" class="mt-form">
+      <h4 id="mt-title" class="fd-title fd-title--h5"></h4>
+      <p id="mt-intro" class="set-hint"></p>
+      <div id="mt-list" class="mt-list"></div>
+      <p id="mt-msg" class="form-msg" role="status"></p>
+      <div class="qr-actions">
+        <span class="spacer"></span>
+        <button class="fd-button fd-button--transparent" value="close" data-i18n="ver.close">Schließen</button>
+        <button id="mt-create" class="fd-button fd-button--emphasized" type="button" data-i18n="mt.create">In Vikunja anlegen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="qr-dlg" class="ai-dlg ed-dlg qr-dlg" aria-labelledby="qr-title">
+    <form method="dialog" class="qr-form">
+      <h4 id="qr-title" class="fd-title fd-title--h5" data-i18n="qr.title">QR-Aufkleber</h4>
+      <div class="qr-main">
+        <div class="qr-preview"><img id="qr-img" alt=""><span id="qr-label" class="qr-preview__label"></span></div>
+        <div class="qr-fields">
+          <label class="fd-form-label" for="qr-text" data-i18n="qr.label">Beschriftung</label>
+          <input id="qr-text" class="fd-input" autocomplete="off">
+          <label class="fd-form-label qr-pagefield" for="qr-page" data-i18n="qr.page">Auf Seite öffnen (leer = gemerkte Stelle)</label>
+          <input id="qr-page" class="fd-input qr-pagefield" type="number" min="1" inputmode="numeric">
+          <label class="fd-form-label" for="qr-size" data-i18n="qr.size">Größe</label>
+          <select id="qr-size" class="fd-input">
+            <option value="25" data-i18n="qr.small">Klein (25 mm)</option>
+            <option value="40" data-i18n="qr.medium">Mittel (40 mm)</option>
+            <option value="60" data-i18n="qr.large">Groß (60 mm)</option>
+          </select>
+          <p id="qr-url" class="qr-url"></p>
+        </div>
+      </div>
+      <div class="qr-actions">
+        <button id="qr-copy" class="fd-button fd-button--transparent" type="button" data-i18n="qr.copy">Link kopieren</button>
+        <span class="spacer"></span>
+        <button id="qr-close" class="fd-button fd-button--transparent" value="close" data-i18n="ver.close">Schließen</button>
+        <button id="qr-print" class="fd-button fd-button--emphasized" type="button" data-i18n="qr.print">Drucken</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="ver-dlg" class="ai-dlg ver-dlg" aria-labelledby="ver-title">
     <div class="ver-head">
       <h4 id="ver-title" class="fd-title fd-title--h5"></h4>
@@ -865,5 +998,7 @@
   <script src="app.js"></script>
   <script src="i18n-fr.js"></script>
   <script src="i18n-it.js"></script>
+<div id="drag-ghost" class="drag-ghost" aria-hidden="true"></div>
+<div id="drop-veil" class="drop-veil" hidden><span data-i18n="in.dropall">Loslassen – ab in den Eingang</span></div>
 </body>
 </html>

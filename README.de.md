@@ -19,17 +19,23 @@ Wissen! ist die Schwester von [Ordnung!](https://github.com/orohde/Ordnung) (Dok
 
 - **Seiten und PDFs gleichberechtigt.** Die Notfall-Liste, die du selbst schreibst, und die Anleitung der Waschmaschine stehen im selben Baum und kommen in derselben Suche. Eine Seite kann direkt auf Seite 3 einer PDF verweisen (`anleitung.pdf#page=3`).
 - **Volltextsuche** über Titel, Ordner und den Text jeder Seite und jeder PDF, auch bei Scans ohne Textebene (Tesseract-OCR, Deutsch und Englisch, auf dem eigenen Rechner). `#tag` filtert nach Schlagworten.
-- **Fragen ans Archiv (optional, mit KI).** Eine Frage ins Suchfeld tippen – Wissen! sucht die passenden Stellen aus Seiten und PDFs heraus, lässt eine KI daraus antworten und nennt die Quellen bis zur PDF-Seite. An den Anbieter gehen nur die Frage und diese Textstellen. Als Anbieter gehen Claude, ein eigener Ollama-Server oder ein anderer OpenAI-kompatibler Server; ausgeschaltet, bis du es unter *Einstellungen → KI* einschaltest.
+- **Eingang.** PDFs ins Fenster ziehen (Fotos werden zu PDFs) oder in den Ordner `_Eingang` im Archiv legen, über die Freigabe oder einen Sync-Dienst. Wissen! schlägt Titel, Bereich und Ordner vor – aus Dateiname und Unterordner, auf Wunsch von der KI – und legt erst ab, wenn du es bestätigst. Doppelte erkennt es vorher.
+- **Eigener PDF-Leser.** PDFs öffnen in Wissen! selbst, auch am Telefon mit allen Seiten. Wissen! merkt sich je Konto, auf welcher Seite du warst, und was du gelesen hast.
+- **Regal für Zeitschriften.** Ein Ordner lässt sich als Regal mit Titelbildern statt als Liste zeigen, mit Lesefortschritt. Titel sortieren natürlich: Heft 99 vor Heft 100.
+- **QR-Aufkleber.** Für jedes Dokument ein Aufkleber zum Ausdrucken; das Telefon öffnet damit die Anleitung, auf Wunsch gleich auf der richtigen Seite.
+- **Fragen ans Archiv (optional, mit KI).** Eine Frage ins Suchfeld tippen – Wissen! sucht die passenden Stellen aus Seiten und PDFs heraus, lässt eine KI daraus antworten und nennt die Quellen bis zur PDF-Seite. An den Anbieter gehen nur die Frage und diese Textstellen. Als Anbieter gehen Claude, ein eigener Ollama-Server oder ein anderer OpenAI-kompatibler Server; ausgeschaltet, bis du es unter *Einstellungen → KI* einschaltest. Mit `"voice": true` liefert `/api/ask` kurze, vorlesbare Antworten für Sprachassistenten wie Home Assistant.
+- **Mehr mit KI (optional).** *Spickzettel*: eine Seite neben einer Anleitung mit Wartung, Fehlercodes, Ersatzteilen und Werten, jede Angabe mit Seitenlink. *Inhaltsverzeichnis* für Hefte mit der Seite, auf der jeder Beitrag beginnt. *Eingang vorsortieren*: Vorschlag für jede neue Datei.
+- **Wartung nach Vikunja.** Die KI liest die wiederkehrende Wartung aus einer Anleitung; ausgewählt wird sie zu wiederkehrenden Aufgaben in [Vikunja](https://vikunja.io), mit Link zurück.
 - **Schreiben in zwei Ansichten.** *Formatiert* zeigt die Seite so, wie sie später aussieht, mit einer Leiste für Fett, Listen, Aufgaben, Links, Bilder und Tabellen. *Quelltext* zeigt das Markdown mit der Vorschau daneben. Welche Ansicht du zuletzt benutzt hast, merkt sich Wissen! für dein Konto.
 - **Schreiben ohne Angst.** Beim Speichern aus der formatierten Ansicht werden nur die Absätze neu geschrieben, die du angefasst hast; der Rest bleibt Zeichen für Zeichen in der Datei. Vor dem Speichern liest Wissen! das Ergebnis zurück und vergleicht es mit dem, was du siehst.
 - **Versionen.** Jede Fassung vor einem Speichern bleibt erhalten, lässt sich mit dem jetzigen Stand vergleichen und zurückholen.
 - **Sperre statt Durcheinander.** Wer eine Seite bearbeitet, hält sie; andere sehen, wer gerade schreibt. Die Sperre läuft von selbst ab, wenn der Editor zu ist.
 - **Startseite.** Wissen! öffnet mit dem, was du angepinnt hast, und dem zuletzt Geänderten. Jede Person pinnt für sich.
 - **Hinweiskästen, Aufgabenlisten, Tabellen, Bilder.** Bilder einer Seite liegen in einem Ordner gleich daneben (`<Seite>.assets/`) und lassen sich beim Schreiben einfügen oder hineinziehen.
-- **Neue Seite, Umbenennen, Verschieben, Papierkorb.** Beim Umbenennen und Verschieben zieht Wissen! die Links nach, die auf das Dokument zeigen. Gelöschtes bleibt 30 Tage im Papierkorb (einstellbar) und lässt sich zurückholen.
+- **Neue Seite, Umbenennen, Verschieben, Papierkorb.** Verschieben geht auch per Ziehen auf einen Ordner im Baum, mehrere angehakte auf einmal. Beim Umbenennen und Verschieben zieht Wissen! die Links nach, die auf das Dokument zeigen. Gelöschtes bleibt 30 Tage im Papierkorb (einstellbar) und lässt sich zurückholen.
 - **Bereiche und Rechte.** Ein Bereich ist ein Hauptordner, etwa je Thema, Haushalt oder Person. Rechte gibt es je Person und Bereich: kein Zugriff, lesen oder lesen und schreiben.
 - **Lesebreite und Schriftgröße** per Schieber, je Konto gemerkt. Hell und dunkel.
-- **REST-API und MCP.** Alles, was die Oberfläche kann, geht auch per API (ausprobierbar unter `/api/docs`). Für KI-Assistenten gibt es einen MCP-Endpunkt unter `/api/mcp`. Schlüssel legst du unter *Einstellungen → Verbindungen* an, nur lesend oder lesend und schreibend.
+- **REST-API und MCP.** Alles, was die Oberfläche kann, geht auch per API (ausprobierbar unter `/api/docs`). Für KI-Assistenten gibt es einen MCP-Endpunkt unter `/api/mcp`. Schlüssel legst du unter *Einstellungen → Verbindungen* an, nur lesend oder lesend und schreibend; ein lesender Schlüssel darf auch das Archiv fragen.
 - **Zweiter Faktor** für die Anmeldung, auf Wunsch Pflicht für den Zugang von außen.
 
 <table>
@@ -73,6 +79,7 @@ Eingestellt wird in der App. In die Compose-Datei gehören nur Ordner, Port und,
 | `VERSIONSPRUEFUNG` | an | `0` schaltet die tägliche Frage nach neuen Versionen dauerhaft ab (siehe unten) |
 | `WISSEN_TRUSTED_PROXIES` | private Netze | Von welchen Adressen `X-Forwarded-For` geglaubt wird, durch Komma getrennt (IP oder Netz, z. B. `10.10.20.50`). Am besten die Adresse des Reverse Proxys eintragen |
 | `WISSEN_MAX_UPLOAD_MB` | `100` | Größte Anfrage in MB; größere bekommen 413 (ein einzelner Anhang bleibt auf 50 MB begrenzt) |
+| `WISSEN_INBOX` | `<Archiv>/_Eingang` | Eingang: PDFs, die hier liegen (per Browser hochgeladen, über die Freigabe oder einen Sync-Dienst), warten unter *Eingang* aufs Ablegen. Ein Unterordner mit dem Namen eines Bereichs gibt den Ort vor |
 
 Diese Variablen gelten nur als Vorgabe für eine frische Installation; sobald in der App etwas gespeichert ist, zählt die App:
 
@@ -93,7 +100,7 @@ Wissen! erkennt, ob eine Anmeldung aus dem Heimnetz oder von außen kommt, auch 
 
 ### Für KI-Assistenten (MCP)
 
-Der MCP-Zugang ist bei einer frischen Installation aus; ein Administrator schaltet ihn unter *Einstellungen → Verbindungen* ein. Der Endpunkt `/api/mcp` spricht das Model Context Protocol (Streamable HTTP) und nimmt denselben Schlüssel wie die REST-API als `Authorization: Bearer <Schlüssel>`. Die Werkzeuge: Bereiche und Ordner auflisten, suchen, lesen, Seite anlegen, ganz ersetzen, eine Textstelle ersetzen, anhängen, umbenennen, verschieben, Papierkorb und Versionen. Rechte, Sperre, Versionen und Papierkorb gelten dabei wie in der Oberfläche; ein Schlüssel mit Leserecht bekommt keine schreibenden Werkzeuge angeboten.
+Der MCP-Zugang ist bei einer frischen Installation aus; ein Administrator schaltet ihn unter *Einstellungen → Verbindungen* ein. Der Endpunkt `/api/mcp` spricht das Model Context Protocol (Streamable HTTP) und nimmt denselben Schlüssel wie die REST-API als `Authorization: Bearer <Schlüssel>`. Die Werkzeuge: Bereiche und Ordner auflisten, suchen, lesen, Seite anlegen, ganz ersetzen, eine Textstelle ersetzen, anhängen, umbenennen, verschieben, Papierkorb, Versionen, Eingang auflisten und daraus ablegen. Rechte, Sperre, Versionen und Papierkorb gelten dabei wie in der Oberfläche; ein Schlüssel mit Leserecht bekommt keine schreibenden Werkzeuge angeboten.
 
 ## Wie gespeichert wird
 
