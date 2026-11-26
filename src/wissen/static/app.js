@@ -92,6 +92,38 @@ const I18N = {
     "tree.root": "Hauptordner",
     "tree.expand": "Alle aufklappen",
     "tree.collapse": "Alle zuklappen",
+    "tree.newfolder": "Neuer Ordner",
+    "fm.menu": "Ordner-Menü",
+    "fm.new": "Neuer Ordner",
+    "fm.sub": "Neuer Unterordner",
+    "fm.page": "Neue Seite hier",
+    "fm.rename": "Umbenennen",
+    "fm.move": "Verschieben",
+    "fm.delete": "Löschen",
+    "fm.name": "Name",
+    "fm.name.ph": "z. B. Küche – mit / auch mehrere Ebenen",
+    "fm.in": "Wird angelegt in: {where}",
+    "fm.to": "Neuer Ort",
+    "fm.toarea": "Ziel-Bereich",
+    "fm.to.ph": "z. B. Haushalt/Küche",
+    "fm.move.text": "Der Ordner zieht mit allem um, was darin liegt. Links auf seine Seiten werden angepasst.",
+    "fm.ok.new": "Anlegen",
+    "fm.ok.rename": "Umbenennen",
+    "fm.ok.move": "Verschieben",
+    "fm.ok.delete": "Löschen",
+    "fm.del.title": "Ordner löschen",
+    "fm.del.text": "„{folder}“ ist leer und wird entfernt (leere Unterordner mit).",
+    "fm.del.full": "In „{folder}“ liegen noch Dokumente. Nur leere Ordner lassen sich löschen.",
+    "fm.made": "Ordner „{folder}“ angelegt.",
+    "fm.moved": "Ordner „{folder}“: {n} Dokumente umgezogen.",
+    "fm.moved.one": "Ordner „{folder}“: 1 Dokument umgezogen.",
+    "fm.moved.none": "Ordner „{folder}“ umgezogen.",
+    "fm.deleted": "Ordner „{folder}“ gelöscht.",
+    "err.folder exists": "Diesen Ordner gibt es dort schon.",
+    "err.folder not found": "Den Ordner gibt es nicht mehr.",
+    "err.folder not empty": "Im Ordner liegen noch Dokumente.",
+    "err.folder name missing": "Bitte einen Namen für den Ordner eingeben.",
+    "err.a folder cannot go into itself": "Ein Ordner kann nicht in sich selbst verschoben werden.",
     "list.search": "Suche",
     "tags.title": "Tags",
     "tags.ph": "Tag …",
@@ -711,6 +743,38 @@ const I18N = {
     "tree.root": "Main folder",
     "tree.expand": "Expand all",
     "tree.collapse": "Collapse all",
+    "tree.newfolder": "New folder",
+    "fm.menu": "Folder menu",
+    "fm.new": "New folder",
+    "fm.sub": "New subfolder",
+    "fm.page": "New page here",
+    "fm.rename": "Rename",
+    "fm.move": "Move",
+    "fm.delete": "Delete",
+    "fm.name": "Name",
+    "fm.name.ph": "e.g. Kitchen – with / several levels at once",
+    "fm.in": "Created in: {where}",
+    "fm.to": "New place",
+    "fm.toarea": "Target area",
+    "fm.to.ph": "e.g. Household/Kitchen",
+    "fm.move.text": "The folder moves with everything in it. Links to its pages are corrected.",
+    "fm.ok.new": "Create",
+    "fm.ok.rename": "Rename",
+    "fm.ok.move": "Move",
+    "fm.ok.delete": "Delete",
+    "fm.del.title": "Delete folder",
+    "fm.del.text": "“{folder}” is empty and will be removed (with its empty subfolders).",
+    "fm.del.full": "There are still documents in “{folder}”. Only empty folders can be deleted.",
+    "fm.made": "Folder “{folder}” created.",
+    "fm.moved": "Folder “{folder}”: {n} documents moved.",
+    "fm.moved.one": "Folder “{folder}”: 1 document moved.",
+    "fm.moved.none": "Folder “{folder}” moved.",
+    "fm.deleted": "Folder “{folder}” deleted.",
+    "err.folder exists": "This folder exists there already.",
+    "err.folder not found": "The folder no longer exists.",
+    "err.folder not empty": "There are still documents in the folder.",
+    "err.folder name missing": "Please enter a name for the folder.",
+    "err.a folder cannot go into itself": "A folder cannot be moved into itself.",
     "list.search": "Search",
     "tags.title": "Tags",
     "tags.ph": "Tag …",
@@ -1391,7 +1455,7 @@ async function showApp() {
   document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !State.me.is_admin; });
   setView({ zoom: State.me.zoom, width: State.me.width }, false);      // as this account left it
   State.shelves = new Set(State.me.shelves || []);
-  for (const id of ['btn-new', 'start-new']) $(id).hidden = !(State.me.write_areas || []).length;
+  for (const id of ['btn-new', 'start-new', 'tree-newfolder']) $(id).hidden = !(State.me.write_areas || []).length;
   const areas = await api('areas');
   State.areas = areas;
   const saved = store.get('areas', null);
@@ -1474,6 +1538,10 @@ function addNode(box, node, depth) {
     toggleOpen(node.path);
   });
   dropTarget(row, node, hasKids && depth > 0 && !isOpen);
+  row.addEventListener('contextmenu', ev => {
+    if (folderMenu(ev.clientX, ev.clientY, node)) ev.preventDefault();
+  });
+  longPress(row, (x, y) => folderMenu(x, y, node));
   row.addEventListener('click', () => {
     if (hasKids && depth > 0 && State.folder === node.path) { toggleOpen(node.path); return; }
     if (hasKids && depth > 0) State.open.add(node.path);
@@ -3031,6 +3099,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('btn-tree').addEventListener('click', () => $('tree-panel').classList.toggle('is-open'));
   $('tree-expand').addEventListener('click', () => setAllOpen(true));
   $('tree-collapse').addEventListener('click', () => setAllOpen(false));
+  $('tree-newfolder').addEventListener('click', () => newFolder(findNode(State.folder) ? State.folder : ''));
   document.addEventListener('keydown', ev => {
     if (ev.key !== 'Escape') return;
     if (!$('settings').hidden || !$('pagepage').hidden) location.hash = '#/';
@@ -3363,13 +3432,14 @@ async function afterChange(doc) {
   if (State.selected && doc && State.selected.id === doc.id) closePreview();
 }
 
-async function newPage() {
+async function newPage(preset = {}) {
   const areas = writeAreas();
   if (!areas.length) return;
-  const first = areas.find(a => State.active.has(a.name)) || areas[0];
+  const first = areas.find(a => a.name === preset.area) || areas.find(a => State.active.has(a.name)) || areas[0];
   const fields = [{ key: 'title', label: t('new.title') }];
   if (areas.length > 1) fields.push({ key: 'area', label: t('new.area'), value: first.name, options: areas.map(a => ({ value: a.name, label: areaLabel(a.name) })) });
-  fields.push({ key: 'folder', label: t('new.folder'), value: $('startpage').hidden ? State.folder : '', placeholder: t('new.folder.ph') });
+  const folder = preset.folder ?? ($('startpage').hidden ? State.folder : '');
+  fields.push({ key: 'folder', label: t('new.folder'), value: folder, placeholder: t('new.folder.ph') });
   const doc = await ask({ title: t('new.page'), ok: t('new.ok'), fields,
     run: v => api('pages', { method: 'POST', body: JSON.stringify({ area: v.area || first.name, folder: v.folder, title: v.title }) }) });
   if (!doc) return;
@@ -4319,6 +4389,169 @@ function docMenu(anchor, doc) {
 }
 
 
+
+// ------------------------------------------------- folders: new, rename, move, delete
+// A folder lives in one or more areas (the tree merges them). Every change is made in one area;
+// where a folder exists in several writable ones, the dialog asks which.
+
+function findNode(path, node = treeData) {
+  if (!node) return null;
+  if (node.path === path) return node;
+  for (const c of node.children) { const hit = findNode(path, c); if (hit) return hit; }
+  return null;
+}
+
+// the writable areas a folder can be changed in (for the top row: every writable area shown)
+function folderAreas(node) {
+  const w = writeAreas().map(a => a.name).filter(a => State.active.has(a));
+  return node && node.path ? w.filter(a => node.areas.includes(a)) : w;
+}
+
+const areaField = (key, label, names, value) => names.length > 1
+  ? [{ key, label, value: value || names[0], options: names.map(n => ({ value: n, label: areaLabel(n) })) }] : [];
+
+const folderWhere = path => path ? path.split('/').join(' › ') : t('tree.root');
+
+function folderList() {
+  let dl = $('fm-folders');
+  if (!dl) { dl = document.createElement('datalist'); dl.id = 'fm-folders'; document.body.appendChild(dl); }
+  const paths = [];
+  const walk = n => n.children.forEach(c => { paths.push(c.path); walk(c); });
+  if (treeData) walk(treeData);
+  dl.innerHTML = paths.map(p => `<option value="${esc(p)}"></option>`).join('');
+  return 'fm-folders';
+}
+
+// after a rename or move: the selection and the opened folders follow
+function followFolder(from, to) {
+  const swap = p => (p === from ? to : p.startsWith(from + '/') ? to + p.slice(from.length) : p);
+  State.open = new Set([...State.open].map(swap));
+  if (State.folder === from || State.folder.startsWith(from + '/')) {
+    State.folder = swap(State.folder);
+    store.set('folder', State.folder);
+  }
+  openAncestors(to);
+  saveOpen();
+}
+
+async function newFolder(parent = '') {
+  const areas = folderAreas(findNode(parent) || { path: '' });
+  if (!areas.length) return;
+  const fields = [...areaField('area', t('new.area'), areas), { key: 'name', label: t('fm.name'), placeholder: t('fm.name.ph') }];
+  const done = await ask({ title: parent ? t('fm.sub') : t('fm.new'), text: t('fm.in', { where: folderWhere(parent) }),
+    ok: t('fm.ok.new'), fields,
+    run: v => api('folders', { method: 'POST', body: JSON.stringify({ area: v.area || areas[0],
+      folder: [parent, v.name].filter(Boolean).join('/') }) }) });
+  if (!done) return;
+  toast(esc(t('fm.made', { folder: folderWhere(done.folder) })));
+  openAncestors(done.folder);
+  selectFolder(done.folder);
+  loadTree().catch(() => null);
+}
+
+async function renameFolder(node) {
+  const areas = folderAreas(node);
+  if (!areas.length) return;
+  const parent = node.path.includes('/') ? node.path.slice(0, node.path.lastIndexOf('/')) : '';
+  const fields = [...areaField('area', t('new.area'), areas), { key: 'name', label: t('fm.name'), value: node.name }];
+  const done = await ask({ title: `${t('fm.rename')}: ${node.name}`, ok: t('fm.ok.rename'), fields,
+    run: v => api('folders/move', { method: 'POST', body: JSON.stringify({ area: v.area || areas[0],
+      folder: node.path, to_folder: [parent, v.name].filter(Boolean).join('/') }) }) });
+  if (!done) return;
+  folderDone(node.path, done);
+}
+
+async function moveFolder(node) {
+  const areas = folderAreas(node);
+  if (!areas.length) return;
+  const targets = writeAreas().map(a => a.name);
+  const fields = [...areaField('area', t('new.area'), areas),
+    ...areaField('to_area', t('fm.toarea'), targets, areas[0]),
+    { key: 'to', label: t('fm.to'), value: node.path, placeholder: t('fm.to.ph'), list: folderList() }];
+  const done = await ask({ title: `${t('fm.move')}: ${node.name}`, text: t('fm.move.text'), ok: t('fm.ok.move'), fields,
+    run: v => api('folders/move', { method: 'POST', body: JSON.stringify({ area: v.area || areas[0],
+      folder: node.path, to_area: v.to_area || v.area || areas[0], to_folder: v.to }) }) });
+  if (!done) return;
+  folderDone(node.path, done);
+}
+
+function folderDone(from, done) {
+  const key = done.moved === 1 ? 'fm.moved.one' : done.moved ? 'fm.moved' : 'fm.moved.none';
+  toast(esc(t(key, { folder: folderWhere(done.folder), n: done.moved }) + linksNote(done)));
+  followFolder(from, done.folder);
+  refreshArchive();
+}
+
+async function deleteFolder(node) {
+  const areas = folderAreas(node);
+  if (!areas.length) return;
+  const done = await ask({ title: t('fm.del.title'), text: t('fm.del.text', { folder: folderWhere(node.path) }),
+    ok: t('fm.ok.delete'), fields: areaField('area', t('new.area'), areas),
+    run: v => api(`folders?area=${encodeURIComponent(v.area || areas[0])}&folder=${encodeURIComponent(node.path)}`,
+      { method: 'DELETE' }) });
+  if (!done) return;
+  toast(esc(t('fm.deleted', { folder: folderWhere(node.path) })));
+  State.open.delete(node.path);
+  if (State.folder === node.path || State.folder.startsWith(node.path + '/')) {
+    selectFolder(node.path.includes('/') ? node.path.slice(0, node.path.lastIndexOf('/')) : '');
+  }
+  loadTree().catch(() => null);
+}
+
+// right click (or a long press) on a folder; returns false where there is nothing to offer
+function folderMenu(x, y, node) {
+  const areas = folderAreas(node);
+  if (!areas.length) return false;
+  document.querySelector('.fo-menu')?.remove();
+  const menu = document.createElement('div');
+  menu.className = 'fo-menu';
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', t('fm.menu'));
+  const item = (k, label, extra = '') => `<button type="button" role="menuitem" data-k="${k}"${extra}>${esc(label)}</button>`;
+  menu.innerHTML = item('sub', node.path ? t('fm.sub') : t('fm.new')) + item('page', t('fm.page')) +
+    (node.path ? item('rename', t('fm.rename')) + item('move', t('fm.move')) +
+      item('delete', t('fm.delete'), node.count ? ` disabled title="${esc(t('fm.del.full', { folder: node.name }))}"` : '') : '');
+  document.body.appendChild(menu);
+  menu.style.left = Math.max(8, Math.min(x, innerWidth - menu.offsetWidth - 8)) + 'px';
+  menu.style.top = Math.max(8, Math.min(y, innerHeight - menu.offsetHeight - 8)) + 'px';
+  const close = () => { menu.remove(); removeEventListener('pointerdown', outside, true); removeEventListener('keydown', esc_, true); };
+  const outside = ev => { if (!menu.contains(ev.target)) close(); };
+  const esc_ = ev => { if (ev.key === 'Escape') close(); };
+  addEventListener('pointerdown', outside, true);
+  addEventListener('keydown', esc_, true);
+  menu.addEventListener('click', ev => {
+    const el = ev.target.closest('[role=menuitem]');
+    if (!el || el.disabled) return;
+    close();
+    const k = el.dataset.k;
+    if (k === 'sub') newFolder(node.path);
+    if (k === 'page') newPage({ folder: node.path, area: areas[0] });
+    if (k === 'rename') renameFolder(node);
+    if (k === 'move') moveFolder(node);
+    if (k === 'delete') deleteFolder(node);
+  });
+  menu.querySelector('button:not(:disabled)')?.focus();
+  return true;
+}
+
+// touch: holding a finger on an element opens what a right click would (iPad, iPhone)
+function longPress(el, fire) {
+  let timer = null, start = null, fired = false;
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  el.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'mouse') return;
+    fired = false;
+    start = [ev.clientX, ev.clientY];
+    timer = setTimeout(() => { timer = null; fired = true; fire(start[0], start[1]); }, 550);
+  });
+  el.addEventListener('pointermove', ev => {
+    if (timer && Math.hypot(ev.clientX - start[0], ev.clientY - start[1]) > 10) cancel();
+  });
+  el.addEventListener('pointerup', cancel);
+  el.addEventListener('pointercancel', cancel);
+  // the finger lifting after a long press is no click on the folder
+  el.addEventListener('click', ev => { if (fired) { fired = false; ev.stopImmediatePropagation(); } }, true);
+}
 
 // ------------------------------------------------------------ cheat sheet
 // The AI reads a manual and writes "<Titel> – Spickzettel" next to it: maintenance, error codes,

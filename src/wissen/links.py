@@ -91,3 +91,28 @@ def rebase(text: str, old_page_rel: str, new_page_rel: str) -> str:
         new = relative(new_page_rel, where)
         return new if new != target else None
     return _each_link(text, change)
+
+
+def remap(text: str, old_page_rel: str, new_page_rel: str, old_prefix: str, new_prefix: str) -> str:
+    """``text`` of a page after the folder ``old_prefix`` moved to ``new_prefix`` (both inside the archive).
+
+    The page itself may have moved with it (``old_page_rel`` → ``new_page_rel``). Every link is read
+    from where the page was; a target inside the moved folder gets its new place, and the path is
+    counted from where the page is now. Links within the moved folder thus stay as they are.
+    """
+    old_prefix, new_prefix = nfc(old_prefix).rstrip("/") + "/", nfc(new_prefix).rstrip("/") + "/"
+    same_folder = _folder(old_page_rel) == _folder(new_page_rel)
+
+    def change(target: str) -> str | None:
+        where = resolve(old_page_rel, target)
+        if where.startswith("../"):
+            return None                              # outside the archive: hands off
+        if where.startswith(old_prefix):
+            where = new_prefix + where[len(old_prefix):]
+        elif where + "/" == old_prefix:
+            where = new_prefix.rstrip("/")
+        elif same_folder:
+            return None                              # neither the page nor the target moved
+        new = relative(new_page_rel, where)
+        return new if new != target else None
+    return _each_link(text, change)

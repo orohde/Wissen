@@ -234,15 +234,90 @@ def test_trash_and_restore(client: TestClient, settings: Settings):
     assert not any((settings.archive / ".papierkorb").iterdir())          # emptied folders do not linger
 
 
-def test_emptied_folders_go(client: TestClient, settings: Settings):
+def test_folders_stay_when_emptied(client: TestClient, settings: Settings):
+    """Folders are shown and managed now: one stays when its last document leaves."""
     made = client.post("/api/pages", headers=API, json={"area": "oliver", "folder": "A/B/C", "title": "Allein"}).json()
     client.post(f"/api/documents/{made['id']}/move", headers=API, json={"folder": "Geräte"})
-    assert not (settings.archive / "oliver/A").exists()
+    assert (settings.archive / "oliver/A/B/C").is_dir()
     made = client.post("/api/pages", headers=API, json={"area": "erika", "folder": "Neu", "title": "Kurz"}).json()
     client.post(f"/api/documents/{made['id']}/trash", headers=API)
-    assert not (settings.archive / "erika/Neu").exists() and (settings.archive / "erika").is_dir()
-    # a folder that still holds something stays, and so does the area itself
+    assert (settings.archive / "erika/Neu").is_dir()
+
+
+def _tree_paths(node: dict) -> set[str]:
+    return {node["path"]} | {p for c in node["children"] for p in _tree_paths(c)}
+
+
+def test_folder_create_shows_in_tree(client: TestClient, settings: Settings):
+    r = client.post("/api/folders", headers=API, json={"area": "oliver", "folder": " Haushalt / Küche "})
+    assert r.status_code == 201 and r.json() == {"area": "oliver", "folder": "Haushalt/Küche"}
+    assert (settings.archive / "oliver/Haushalt/Küche").is_dir()
+    tree = client.get("/api/tree", headers=API, params={"areas": "oliver"}).json()
+    assert {"Haushalt", "Haushalt/Küche"} <= _tree_paths(tree)
+    kitchen = next(c for c in next(c for c in tree["children"] if c["name"] == "Haushalt")["children"])
+    assert kitchen["count"] == 0 and kitchen["areas"] == ["oliver"]
+    # assets folders of pages are no folders of their own
+    assert not any(p.endswith(".assets") for p in _tree_paths(tree))
+    assert client.post("/api/folders", headers=API, json={"area": "oliver", "folder": "Haushalt/Küche"}).status_code == 409
+    assert client.post("/api/folders", headers=API, json={"area": "oliver", "folder": "../x"}).status_code == 400
+    assert client.post("/api/folders", headers=API, json={"area": "oliver", "folder": ""}).status_code == 400
+    assert client.post("/api/folders", headers=API, json={"area": "nirgends", "folder": "x"}).status_code == 403
+
+
+def test_folder_delete_only_when_empty(client: TestClient, settings: Settings):
+    client.post("/api/folders", headers=API, json={"area": "oliver", "folder": "Leer/Unten"})
+    (settings.archive / "oliver/Leer/.DS_Store").write_bytes(b"x")
+    assert client.delete("/api/folders", headers=API, params={"area": "oliver", "folder": "Geräte"}).status_code == 409
     assert (settings.archive / "oliver/Geräte").is_dir()
+    assert client.delete("/api/folders", headers=API, params={"area": "oliver", "folder": "Leer"}).json() == {"ok": True}
+    assert not (settings.archive / "oliver/Leer").exists()
+    assert client.delete("/api/folders", headers=API, params={"area": "oliver", "folder": "Leer"}).status_code == 404
+    assert client.delete("/api/folders", headers=API, params={"area": "oliver", "folder": ""}).status_code == 400
+
+
+def test_folder_move_takes_documents_and_links_along(client: TestClient, settings: Settings):
+    outside = client.post("/api/pages", headers=API, json={
+        "area": "oliver", "folder": "Notizen", "title": "Übersicht",
+        "text": "[Wasch](../Geräte/Waschmaschine-%20entkalken.md) [Web](https://example.org)\n"}).json()
+    inside = settings.archive / "oliver/Geräte/Ohne Kopf.md"
+    inside.write_text("# Ohne Kopf\n\n[Nachbar](Waschmaschine-%20entkalken.md) [Raus](../Notizen/%C3%9Cbersicht.md)\n",
+                      encoding="utf-8")
+    client.app.state.index.scan()
+    r = client.post("/api/folders/move", headers=API,
+                    json={"area": "oliver", "folder": "Geräte", "to_folder": "Haus/Technik"})
+    assert r.status_code == 200, r.text
+    done = r.json()
+    assert done["folder"] == "Haus/Technik" and done["moved"] == 2 and done["links_updated"] == 2
+    assert not (settings.archive / "oliver/Geräte").exists()
+    moved = settings.archive / "oliver/Haus/Technik/Waschmaschine- entkalken.md"
+    assert moved.is_file() and (settings.archive / "oliver/Haus/Technik/Waschmaschine- entkalken.assets/foto 1.png").is_file()
+    # the page keeps its id and is found at the new place
+    doc = client.get("/api/documents/abc123def0", headers=API).json()
+    assert doc["folder"] == "Haus/Technik"
+    over = (settings.archive / "oliver/Notizen/Übersicht.md").read_text(encoding="utf-8")
+    assert "[Wasch](../Haus/Technik/Waschmaschine-%20entkalken.md)" in over and "(https://example.org)" in over
+    own = (settings.archive / "oliver/Haus/Technik/Ohne Kopf.md").read_text(encoding="utf-8")
+    assert "[Nachbar](Waschmaschine-%20entkalken.md)" in own            # within the folder: unchanged
+    assert "[Raus](../../Notizen/%C3%9Cbersicht.md)" in own
+    assert "![Bild](Waschmaschine-%20entkalken.assets/foto%201.png)" in moved.read_text(encoding="utf-8")
+    # into another area, then a rename back
+    r = client.post("/api/folders/move", headers=API,
+                    json={"area": "oliver", "folder": "Haus", "to_area": "erika", "to_folder": "Haus"})
+    assert r.status_code == 200 and r.json()["area"] == "erika"
+    assert client.get("/api/documents/abc123def0", headers=API).json()["area"] == "erika"
+    assert "[Wasch](../../erika/Haus/Technik/Waschmaschine-%20entkalken.md)" in \
+        (settings.archive / "oliver/Notizen/Übersicht.md").read_text(encoding="utf-8")
+
+
+def test_folder_move_refused(client: TestClient, settings: Settings):
+    client.post("/api/folders", headers=API, json={"area": "oliver", "folder": "Ziel"})
+    move = lambda **kw: client.post("/api/folders/move", headers=API, json={"area": "oliver", **kw})
+    assert move(folder="Geräte", to_folder="Ziel").status_code == 409                 # exists
+    assert move(folder="Geräte", to_folder="Geräte/Innen").status_code == 400         # into itself
+    assert move(folder="Geräte", to_folder="Geräte").status_code == 409               # nothing to do
+    assert move(folder="Fehlt", to_folder="Woanders").status_code == 404
+    assert move(folder="Geräte", to_folder="").status_code == 400
+    assert (settings.archive / "oliver/Geräte/Ohne Kopf.md").is_file()
 
 
 def test_purge_trash(settings: Settings):

@@ -230,6 +230,18 @@ class MoveIn(BaseModel):
     area: str | None = Field(None, max_length=40)
 
 
+class FolderIn(BaseModel):
+    area: str = Field(max_length=40)
+    folder: str = Field(max_length=1000)
+
+
+class FolderMoveIn(BaseModel):
+    area: str = Field(max_length=40)
+    folder: str = Field(max_length=1000)
+    to_folder: str = Field(max_length=1000)
+    to_area: str | None = Field(None, max_length=40)
+
+
 class ReadingIn(BaseModel):
     id: str = Field(max_length=64, description="the PDF's id")
     page: int | None = Field(None, ge=1, le=100000)
@@ -1207,7 +1219,8 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         text = str(exc)
         status = (404 if "not found" in text or "unknown" in text or "not in the trash" in text
                   else 403 if "no write access" in text
-                  else 409 if "exists" in text or "already" in text or "nothing changed" in text
+                  else 409 if ("exists" in text or "already" in text or "nothing changed" in text
+                               or "not empty" in text)
                   else 400)
         return HTTPException(status_code=status, detail=text)
 
@@ -1402,6 +1415,89 @@ def create_app(settings: Settings | None = None, background: bool = True) -> Fas
         result = _changed(user, rel, doc)
         updated = _relink(user, doc, rel)
         return {**_doc_or_404(result["id"], user), "links_updated": updated}
+
+    # ---------------------------------------------------------- folders
+
+    def _writable_area(user: User, area: str) -> None:
+        if area not in allowed_areas(user) or not user.can_write(area):
+            raise HTTPException(status_code=403, detail="no write access")
+
+    @app.post("/api/folders", tags=["write"], status_code=201)
+    def folder_create(body: FolderIn, user: User = Depends(current_user)):
+        """A new, empty folder in an area; missing parent folders are made too. It shows in the tree at once."""
+        _writable_area(user, body.area)
+        try:
+            folder = docops.make_folder(app.state.index.archive, body.area, body.folder)
+        except DocOpError as exc:
+            raise _op(exc) from exc
+        return {"area": body.area, "folder": folder}
+
+    @app.post("/api/folders/move", tags=["write"])
+    def folder_move(body: FolderMoveIn, user: User = Depends(current_user)):
+        """Rename a folder or move it (with everything in it) elsewhere, also into another area.
+
+        Links from other pages into the folder, and links from its pages out of it, are corrected.
+        Refused while somebody else is editing a page inside.
+        """
+        to_area = body.to_area or body.area
+        _writable_area(user, body.area)
+        _writable_area(user, to_area)
+        index, archive = app.state.index, app.state.index.archive
+        try:
+            folder, to_folder = docops.clean_folder(body.folder), docops.clean_folder(body.to_folder)
+        except DocOpError as exc:
+            raise _op(exc) from exc
+        olds = [d for d in (index.by_path(rel, [body.area]) for rel in index.paths_under(body.area, folder)) if d]
+        for doc in olds:
+            _free(doc, user)
+        try:
+            to_folder = docops.move_folder(archive, body.area, folder, to_area, to_folder)
+        except DocOpError as exc:
+            raise _op(exc) from exc
+        old_prefix, new_prefix = f"{body.area}/{folder}", f"{to_area}/{to_folder}"
+        moved = {d["path"]: new_prefix + d["path"][len(old_prefix):] for d in olds}
+        index.refresh(list(moved.values()), list(moved))
+        for doc in olds:
+            new = index.by_path(moved[doc["path"]], [to_area])
+            if new and new["id"] != doc["id"]:
+                app.state.locks.move(doc["id"], new["id"])
+            if new and _pin_key(doc) != _pin_key(new):
+                app.state.prefs.repin(_pin_key(doc), _pin_key(new))
+        back = {new: old for old, new in moved.items()}
+        writable = [a for a in allowed_areas(user) if user.can_write(a)]
+        who, changed = user.display_name or user.name, 0
+        for rel in index.pages(writable):
+            page = index.by_path(rel, writable)
+            lock = page and app.state.locks.get(page["id"])
+            if not page or (lock and lock["holder"] != _holder(user)):
+                continue
+            try:
+                text = docops.read_page(archive, page)
+                new_text = links.remap(text, back.get(rel, rel), rel, old_prefix, new_prefix)
+                if new_text == text:
+                    continue
+                page_id = read_head(text, "").id
+                if page_id:
+                    app.state.versions.save(page_id, text, who)
+                docops.write_page(archive, page, new_text)
+            except (DocOpError, VersionError):
+                log.exception("links in %s could not be corrected", rel)
+                continue
+            index.refresh([rel], [])
+            changed += 1
+        app.state.wake.set()
+        return {"area": to_area, "folder": to_folder, "moved": len(moved), "links_updated": changed}
+
+    @app.delete("/api/folders", tags=["write"])
+    def folder_delete(area: str = Query(..., max_length=40), folder: str = Query(..., max_length=1000),
+                      user: User = Depends(current_user)):
+        """Remove a folder – only while no document is left in it (empty subfolders go with it)."""
+        _writable_area(user, area)
+        try:
+            docops.remove_folder(app.state.index.archive, area, folder)
+        except DocOpError as exc:
+            raise _op(exc) from exc
+        return {"ok": True}
 
     @app.post("/api/documents/{doc_id}/trash", tags=["write"])
     def doc_trash(doc_id: str, user: User = Depends(current_user)):

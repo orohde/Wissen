@@ -35,6 +35,7 @@ Wissen! is the sister of [Ordnung!](https://github.com/orohde/Ordnung) (document
 - **Start page.** Wissen! opens with what you pinned and what changed last. Everybody pins for themselves.
 - **Callouts, task lists, tables, pictures.** A page's pictures live in a folder right next to it (`<page>.assets/`) and can be pasted or dropped in while writing.
 - **New page, rename, move, trash.** Moving also works by dragging onto a folder in the tree, several ticked documents at once. When a document is renamed or moved, Wissen! corrects the links that point at it. Deleted documents stay in the trash for 30 days (adjustable) and can be put back.
+- **Folders in the tree.** New folders and subfolders via “+” or a right click on a folder (a long press on iPad and iPhone): new subfolder, new page here, rename, move – into another area too – and delete while it is empty. Empty folders show in the tree at once. A folder that moves takes everything in it along, and links to it are corrected.
 - **Areas and rights.** An area is a top folder, for instance per topic, household or person. Rights are set per person and area: no access, read, or read and write.
 - **Reading width and text size** by slider, remembered per account. Light and dark.
 - **REST API and MCP.** Everything the interface can do works over the API as well (try it under `/api/docs`). For AI assistants there is an MCP endpoint at `/api/mcp`. Keys are made under *Settings → Connections*, read-only or read and write; a read-only key may also ask the archive.

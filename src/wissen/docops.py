@@ -72,7 +72,7 @@ def _makedirs(path: Path, root: Path) -> None:
 def _prune(folder: Path, stop: Path) -> None:
     """Remove folders the last document just left, up to (not including) ``stop``.
 
-    The app only shows folders that hold documents; an emptied one would linger unseen on the share.
+    Used for the trash and the inbox; archive folders are shown and managed, so they stay.
     """
     stop = stop.resolve()
     while folder != stop and stop in folder.parents:
@@ -243,8 +243,70 @@ def move(archive: Path, doc: dict, folder: str, area: str | None = None) -> str:
         os.replace(src, dest)
         if assets and assets.is_dir():
             os.rename(assets, _assets(dest))
-        _prune(src.parent, on_disk(archive.resolve(), doc["area"]))
     return _rel(archive, dest)
+
+
+# ------------------------------------------------------------------ folders
+
+def _folder_dir(archive: Path, area: str, folder: str) -> Path:
+    """An existing folder of an area (not the area itself)."""
+    folder = clean_folder(folder)
+    if not folder:
+        raise DocOpError("folder name missing")
+    path = on_disk(_area_dir(archive, area), folder)
+    if not path.is_dir():
+        raise DocOpError("folder not found")
+    return path
+
+
+def make_folder(archive: Path, area: str, folder: str) -> str:
+    """A new, empty folder ``area/folder`` (parents too); returns the cleaned folder path."""
+    _writable(archive)
+    folder = clean_folder(folder)
+    if not folder:
+        raise DocOpError("folder name missing")
+    target = on_disk(_area_dir(archive, area), folder)
+    with _lock:
+        if target.exists():
+            raise DocOpError("folder exists")
+        _makedirs(target, archive.resolve())
+    return folder
+
+
+def folder_files(path: Path) -> list[Path]:
+    """Everything that counts as content below ``path`` (dot files such as .DS_Store do not)."""
+    return [p for p in path.rglob("*") if p.is_file() and not p.name.startswith(".")]
+
+
+def move_folder(archive: Path, area: str, folder: str, to_area: str, to_folder: str) -> str:
+    """Rename or move ``area/folder`` with everything in it to ``to_area/to_folder``; returns the new folder path."""
+    _writable(archive)
+    src = _folder_dir(archive, area, folder)
+    folder = clean_folder(folder)
+    to_folder = clean_folder(to_folder)
+    if not to_folder:
+        raise DocOpError("folder name missing")
+    dest = on_disk(_area_dir(archive, to_area), to_folder)
+    if area == to_area and folder == to_folder:
+        raise DocOpError("already in this folder")
+    if area == to_area and (to_folder + "/").startswith(folder + "/"):
+        raise DocOpError("a folder cannot go into itself")
+    with _lock:
+        if dest.exists() and not _same(src, dest):      # same folder, other case: a pure rename
+            raise DocOpError("folder exists")
+        _makedirs(dest.parent, archive.resolve())
+        os.rename(src, dest)
+    return to_folder
+
+
+def remove_folder(archive: Path, area: str, folder: str) -> None:
+    """Remove an empty folder (empty subfolders and dot files go with it)."""
+    _writable(archive)
+    path = _folder_dir(archive, area, folder)
+    with _lock:
+        if folder_files(path):
+            raise DocOpError("folder not empty")
+        shutil.rmtree(path)
 
 
 def trash(archive: Path, doc: dict) -> str:
@@ -264,7 +326,6 @@ def trash(archive: Path, doc: dict) -> str:
         os.replace(src, dest)
         if assets and assets.is_dir():
             os.rename(assets, _assets(dest))
-        _prune(src.parent, root / rel.parts[0])
     return nfc(dest.relative_to(root).as_posix())
 
 

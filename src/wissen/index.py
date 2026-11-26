@@ -501,6 +501,21 @@ class Index:
             pass
         return [{"name": name, "count": counts[name]} for name in sorted(counts)]
 
+    def disk_folders(self, areas: list[str]) -> list[tuple[str, str]]:
+        """``(area, folder)`` of every folder on disk below these areas – the ones without documents included."""
+        out = []
+        for area in areas:
+            top = on_disk(self.archive, area)
+            if not top.is_dir():
+                continue
+            for dirpath, dirnames, _ in os.walk(top):
+                dirnames[:] = [d for d in dirnames
+                               if not d.startswith(".") and d not in SKIP_NAMES and not d.endswith(ASSET_SUFFIX)]
+                rel = Path(dirpath).relative_to(top).as_posix()
+                if rel != ".":
+                    out.append((area, nfc(rel)))
+        return out
+
     def tree(self, areas: list[str], template: set[str] | None = None) -> dict:
         """One merged folder tree across all given areas, plus empty template folders."""
         root = {"name": "", "path": "", "count": 0, "own": 0, "areas": set(), "children": {}}
@@ -520,6 +535,14 @@ class Index:
                 "GROUP BY area, folder",
                 areas,
             ).fetchall()
+        for area, folder in self.disk_folders(areas):      # empty folders show too, so they can be filled
+            node, path = root, []
+            for part in folder.split("/"):
+                path.append(part)
+                node = node["children"].setdefault(
+                    part, {"name": part, "path": "/".join(path), "count": 0, "own": 0,
+                           "areas": set(), "children": {}})
+                node["areas"].add(area)
         for row in rows:
             node = root
             node["count"] += row["n"]
@@ -690,6 +713,13 @@ class Index:
         with self.connect() as con:
             return [r[0] for r in con.execute(
                 f"SELECT path FROM files WHERE ext = 'md' AND area IN ({marks}) ORDER BY path", list(areas))]
+
+    def paths_under(self, area: str, folder: str) -> list[str]:
+        """Paths of every document in ``folder`` of ``area`` and below it."""
+        with self.connect() as con:
+            return [r[0] for r in con.execute(
+                "SELECT path FROM files WHERE area = ? AND (folder = ? OR folder LIKE ? ESCAPE '\\') ORDER BY path",
+                (area, folder, _like_escape(folder) + "/%"))]
 
     def by_path(self, path: str, areas: list[str]) -> dict | None:
         if not areas:
